@@ -17,7 +17,7 @@ return [
     'stock' => [
         'label' => 'Administración de Stock',
         'icon' => 'fas fa-boxes',
-        'roles' => ['Admin'],
+        'roles' => ['Admin ','Employee'],
         'children' => [
             'categories' => [
                 'label' => 'Categorias',
@@ -29,26 +29,26 @@ return [
                 'label' => 'Productos',
                 'icon' => 'fas fa-tags',
                 'route' => 'products',
-                'roles' => ['Admin'],
+                'roles' => ['Admin', 'Employee'],
             ],
         ],
     ],
     'graphics' => [
         'label' => 'Reporteria',
         'icon' => 'fas fa-chart-pie',
-        'roles' => ['Admin'],
+        'roles' => ['Admin', 'Employee'],
         'children' => [
             'cashout' => [
                 'label' => 'Cierre Caja',
                 'icon' => 'fas fa-money-check-alt',
                 'route' => 'cashout',
-                'roles' => ['Admin'],
+                'roles' => ['Admin','Employee'],
             ],
             'reports' => [
                 'label' => 'Reportes de Ventas',
                 'icon' => 'fas fa-file-alt',
                 'route' => 'reports',
-                'roles' => ['Admin'],
+                'roles' => ['Admin', 'Employee'],
             ],
             'graphics' => [
                 'label' => 'Graficas y Estadisticas',

@@ -107,6 +107,22 @@ class ModulePermissionSeeder extends Seeder
         $adminRole = Role::firstOrCreate(['name' => 'Admin']);
         // Asignar todos los permisos al rol Admin
         $adminRole->givePermissionTo(Permission::all());
+
+        // Crear o buscar el rol Employee
+        // Este rol tendrá permisos limitados comparado con el Admin
+        $adminRole2 = Role::firstOrCreate(['name' => 'Employee']);
+        // Asignar todos los permisos al rol Employee
+        $adminRole2->givePermissionTo(Permission::where('name', 'like', 'pos.%')->get());
+        $adminRole2->givePermissionTo(Permission::where('name', 'like', 'products.%')->get());
+        $adminRole2->givePermissionTo(Permission::where('name', 'like', 'reports.%')->get());
+        $adminRole2->givePermissionTo(Permission::where('name', 'like', 'cashout.%')->get());
+
+        // Crear o buscar el rol Seller
+        // Este rol tendrá permisos limitados para ver y realizar acciones en el POS
+        // y no tendrá acceso a la administración de usuarios, roles o permisos
+        $adminRole3 = Role::firstOrCreate(['name' => 'Seller']);
+        // Asignar todos los permisos al rol Admin
+        $adminRole3->givePermissionTo(Permission::where('name', 'like', 'pos.%')->get());
     }
     public function translateModule($moduleName)
     {

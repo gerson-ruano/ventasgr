@@ -18,8 +18,8 @@ class PermissionsSeeder extends Seeder
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // create permissions
-        Permission::create(['name' => 'Category_index']);
-        Permission::create(['name' => 'Category_update']);
+        Permission::create(['name' => 'pos.view']);
+        Permission::create(['name' => 'pos.details']);
         Permission::create(['name' => 'Category_delete']);
         Permission::create(['name' => 'Category_store']);
         Permission::create(['name' => 'Role_index']);
@@ -33,18 +33,16 @@ class PermissionsSeeder extends Seeder
 
         // create roles and assign existing permissions
         $role1 = Role::create(['name' => 'Seller']);
-        $role1->givePermissionTo('Category_index');
-        $role1->givePermissionTo('Category_update');
+        $role1->givePermissionTo('pos.view');
+        $role1->givePermissionTo('pos.details');
 
         $role2 = Role::create(['name' => 'Employee']);
-        $role2->givePermissionTo('Category_index');
-        $role2->givePermissionTo('Category_update');
-        $role2->givePermissionTo('Category_delete');
-        $role2->givePermissionTo('Category_store');
-        $role2->givePermissionTo('Role_index');
-        $role2->givePermissionTo('Role_update');
-        $role2->givePermissionTo('Role_delete');
-        $role2->givePermissionTo('Role_store');
+        $role2->givePermissionTo('pos.view');
+        $role2->givePermissionTo('pos.details');
+        $role2->givePermissionTo('products.index');
+        $role2->givePermissionTo('products.update');
+        $role2->givePermissionTo('products.delete');
+        $role2->givePermissionTo('products.store');
 
         $role3 = Role::create(['name' => 'Admin']);
         // gets all permissions via Gate::before rule; see AuthServiceProvider
