@@ -585,7 +585,7 @@ class Pos extends Component
             $this->tipoPago = 0;
             $this->vendedorSeleccionado = 0;
             $this->getNextSaleNumber();
-            $this->dispatch('noty-done', type: 'success', message: 'Venta realizada con éxito ' . $this->nextSaleNumber - 1);
+            $this->dispatch('noty-done', type: 'success', message: 'Venta ' . $this->nextSaleNumber - 1 . ' realizada con éxito ');
             //return redirect()->to('pos');
             //$this->emit('print-ticket', $sale->id);
 

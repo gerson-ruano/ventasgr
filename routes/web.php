@@ -59,8 +59,6 @@ Route::middleware(['auth','checkStatus'])->group(function () {
         Route::get('report/box/{seller}/{nextSaleNumber}', [ExportController::class, 'reportBox'])->name('report.box');
         //REPORTE GENERAL DE CIERRE DE CAJA PDF
         Route::get('report/box/{userid}/{f1}/{f2}', [ExportController::class, 'reportBoxGeneral'])->name('report.boxgeneral');
-        //IMPRESION VENTA PDF
-        Route::get('report/venta/{change}/{efectivo}/{seller}/{nextSaleNumber}/{totalTaxes}/{discount}/{customer_data}', [ExportController::class, 'reportVenta'])->name('report.venta');
 
         //REPORTES EXCEL
         //Reporte general de ventas
@@ -69,6 +67,9 @@ Route::middleware(['auth','checkStatus'])->group(function () {
         Route::get('report-excel/{userid}/{f1}/{f2}', [ExportController::class, 'reportBoxExcel']);
         //Route::get('report-excel', [ExportController::class,'reportExcel']);
     });
+
+    //IMPRESION VENTA PDF
+    Route::get('report/venta/{change}/{efectivo}/{seller}/{nextSaleNumber}/{totalTaxes}/{discount}/{customer_data}', [ExportController::class, 'reportVenta'])->name('report.venta');
 
     Route::middleware(['role:Admin|Employee|Seller'])->group(function () {
         Route::get('pos', Pos::class)->name('pos');

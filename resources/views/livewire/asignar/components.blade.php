@@ -1,21 +1,23 @@
 <div>
     <!-- Header Section -->
-    <div class="flex justify-center items-center mt-4 mb-1 mr-1 ml-1">
-        <h4 class="font-bold text-2xl mr-2">
-            {{ $componentName }}
-        </h4>
-        <div class="ml-4">
-            <select wire:model.live="role" id="role_select" name="role_select" class="select select-info w-full">
+    <div class="flex flex-col sm:flex-row sm:justify-center sm:items-center mt-4 mb-1 mx-1 gap-2 sm:gap-4">
+
+        <!-- Selector de Roles -->
+        <div class="w-full sm:w-auto">
+            <select wire:model.live="role" id="role_select" name="role_select"
+                    class="select select-info w-full">
                 <option value="Elegir" selected>== Seleccione el Rol ==</option>
                 @foreach ($roles as $role)
                     <option value="{{ $role->id }}">{{ $role->name }}</option>
                 @endforeach
             </select>
-            @error("role") <span class="text-red-500 text-sm">{{ $message }}</span>@enderror
+            @error("role")
+            <span class="text-red-500 text-sm">{{ $message }}</span>
+            @enderror
         </div>
 
         <!-- Selector de Módulos -->
-        <div class="ml-4">
+        <div class="w-full sm:w-auto">
             <select wire:model.live="moduleSelected" class="select select-info w-full">
                 <option value="all">Todos los Módulos</option>
                 @foreach ($modules as $module)
@@ -23,11 +25,37 @@
                 @endforeach
             </select>
         </div>
-        <div class="flex items-center ml-2 space-x-2">
-            <livewire:components.searchbox :model="'search'"/>
-            @include('livewire.components.button_add', ['color' => 'accent' ,'model' => 'syncAllFromModule','icon' => 'check-circle', 'title' => 'Asignar Modulo'])
-            @include('livewire.components.button_add', ['color' => 'primary' ,'model' => 'SyncAll','icon' => 'universal-access', 'title' => 'Asignar Todos'])
-            @include('livewire.components.button_add', ['color' => 'warning' ,'model' => 'Removeall','icon' => 'times-circle', 'title' => 'Revocar Todos'])
+
+        <!-- Título -->
+        <h4 class="font-bold text-xl sm:text-2xl text-center sm:text-left">
+            {{ $componentName }}
+        </h4>
+
+        <!-- Botones -->
+        <div class="flex flex-col sm:flex-row sm:justify-center sm:items-center mt-4 mb-1 mx-1 gap-2 sm:gap-4">
+            <!-- Bloque de botones -->
+            <div class="w-full sm:w-auto">
+                <div class="flex justify-center sm:justify-start gap-2">
+                    @include('livewire.components.button_add', [
+                        'color' => 'accent',
+                        'model' => 'syncAllFromModule',
+                        'icon' => 'check-circle',
+                        'title' => 'Asignar Modulo'
+                    ])
+                    @include('livewire.components.button_add', [
+                        'color' => 'primary',
+                        'model' => 'SyncAll',
+                        'icon' => 'universal-access',
+                        'title' => 'Asignar Todos'
+                    ])
+                    @include('livewire.components.button_add', [
+                        'color' => 'warning',
+                        'model' => 'Removeall',
+                        'icon' => 'times-circle',
+                        'title' => 'Revocar Todos'
+                    ])
+                </div>
+            </div>
         </div>
     </div>
 

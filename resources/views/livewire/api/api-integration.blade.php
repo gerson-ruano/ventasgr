@@ -35,21 +35,19 @@
                     <i :class="texto.trim().length > 0 ? 'fas fa-filter mr-1' : 'fas fa-sync-alt mr-1'"></i>
                     <span x-text="texto.trim().length > 0 ? 'Filtrar' : 'Actualizar'"></span>
                 </button>
+                {{-- Botón adicional --}}
+                @can('api.create')
+                    <div class="w-full sm:w-auto">
+                        @include('livewire.components.button_add', [
+                            'color' => 'success',
+                            'model' => 'crear',
+                            'icon' => 'plus',
+                            'title' => "Agregar factura"
+                        ])
+                    </div>
+                @endcan
             </div>
-
-            {{-- Botón adicional --}}
-            @can('api.create')
-                <div class="w-full sm:w-auto">
-                    @include('livewire.components.button_add', [
-                        'color' => 'success',
-                        'model' => 'crear',
-                        'icon' => 'plus',
-                        'title' => "Agregar factura"
-                    ])
-                </div>
-            @endcan
         </div>
-
 
     </div>
     @if ($datos)

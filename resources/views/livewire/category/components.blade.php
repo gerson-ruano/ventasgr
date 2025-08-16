@@ -4,7 +4,7 @@
         <div class="mr-2">
             <livewire:components.searchbox :model="'search'"/>
         </div>
-        <h4 class="font-bold text-2xl">
+        <h4 class="font-bold text-2xl mr-2 dark:text-gray-400">
             {{ $componentName }} | {{ $pageTitle }}
         </h4>
         @include('livewire.components.button_add', ['color' => 'accent' ,'model' => 'openModal', 'icon' => 'plus', 'title' => $componentName])
