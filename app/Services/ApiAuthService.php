@@ -25,6 +25,17 @@ class ApiAuthService
 
     public function authenticate()
     {
+        if (
+            empty(config('factus.url')) ||
+            empty(config('factus.client_id')) ||
+            empty(config('factus.client_secret')) ||
+            empty(config('factus.username')) ||
+            empty(config('factus.password'))
+        ) {
+            // Puedes devolver null o un mensaje sin lanzar excepción
+            return null;
+            //return response()->json(['error' => 'Configuración de API incompleta.'], 500);
+        }
         try {
             $response = Http::asForm()
                 ->timeout(10)

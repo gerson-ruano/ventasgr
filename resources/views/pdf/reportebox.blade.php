@@ -116,11 +116,11 @@
     <tbody>
     <tr>
         <td>
-            {{$currency}}. {{ number_format(($sale->cash - $sale->change) - $sale->details->first()->discount - $sale->taxes, 2) }}</td>
+            {{$currency}}. {{ number_format(($sale->cash - $sale->change) - ($sale->details->first()->discount ?? 0) - $sale->taxes, 2) }}</td>
         <td>{{$currency}}. {{ number_format($sale->cash, 2) }}</td>
         <td>{{$currency}}. {{ number_format($sale->change, 2) }}</td>
         <td>{{$currency}}. {{ number_format($sale->taxes, 2) }}</td>
-        <td>{{$currency}}. {{ $sale->details->first()->discount }}</td>
+        <td>{{$currency}}. {{ ($sale->details->first()->discount ?? 0) }}</td>
         <td>{{ $statusTranslations[$sale->status] ?? $sale->status }}</td>
         <td>{{ \Carbon\Carbon::parse($sale->created_at)->format('d-m-Y H:i') }}</td>
         @if($sale->created_at != $sale->updated_at)
