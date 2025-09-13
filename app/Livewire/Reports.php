@@ -34,6 +34,11 @@ class Reports extends Component
         return 'vendor.livewire.tailwind';
     }
 
+    public function updating($selectTipoEstado)
+    {
+        $this->resetPage();
+    }
+
     public function mount()
     {
         $this->data = [];
@@ -157,27 +162,6 @@ class Reports extends Component
         }
     }
 
-    /*public function tipoPago()
-    {
-        // Definir un mapeo de los estados en inglés a su traducción en español
-        $statusTranslations = [
-            'PAID' => 'PAGADO',
-            'PENDING' => 'PENDIENTE',
-            'CANCELLED' => 'ANULADO',
-            // Añade aquí más estados según sea necesario
-        ];
-
-        $statuses = Sale::pluck('status')->unique()->map(function ($status) use ($statusTranslations) {
-            return (object)[
-                'id' => $status,
-                // Si el estado existe en las traducciones, usa la traducción, si no, usa el valor original
-                'name' => $statusTranslations[$status] ?? $status,
-            ];
-        });
-
-        return $statuses->toArray();
-    }*/
-
     public function tipoPago()
     {
         return collect(Sale::STATUS_VALUES)->map(function ($name, $id) {
@@ -208,6 +192,7 @@ class Reports extends Component
         $sale = Sale::find($id);
         if ($sale) {
             $this->selectedStatus = $sale->status; // Guarda el estado actual
+            //$this->valoresPago = $this->opcionesBase[$sale->status] ?? [];
             $this->openModal($modal);
         } else {
             $this->dispatch('showNotification', 'No se encontró la venta', 'dark');

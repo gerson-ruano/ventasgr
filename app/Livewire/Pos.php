@@ -314,6 +314,7 @@ class Pos extends Component
         Cart::add($product->id, $product->name, $cant, $product->price, ['image' => $product->image]);
         $this->updateCartSummary();
         $this->updateTotalPrice();
+        $this->getNextSaleNumber();
         $this->dispatch('showNotification', 'Producto ' . $product->name . ' agregado exitosamente', 'success');
         $this->dispatch('cartUpdated');
 

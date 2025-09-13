@@ -39,6 +39,11 @@ class Cashout extends Component
         $this->currency = setting('app_currency', 'Q');
     }
 
+    public function updating($fromDate, $toDate)
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
 

@@ -29,6 +29,10 @@ class Asignar extends Component
         $this->componentName = 'Asignar Permisos';
         //$this->ensureModulesExist();
     }
+    public function updating($allRoles)
+    {
+        $this->resetPage();
+    }
 
     private function ensureModulesExist()
     {
