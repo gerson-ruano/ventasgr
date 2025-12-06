@@ -19,6 +19,9 @@ class Products extends Component
     use WithPagination;
 
     public $name, $barcode, $cost, $price, $stock, $alerts, $categoryid, $search, $image, $imageUrl, $selected_id, $pageTitle, $componentName;
+    public $isAddStockOpen = false;
+    public $stockToAdd = 0;
+    public $productSelectedStock;
     public $isModalOpen = false;
     private $pagination = 7;
 
@@ -87,6 +90,22 @@ class Products extends Component
     {
         $this->isModalOpen = true;
     }
+
+    public function openAddStockModal($id)
+    {
+        $product = Product::find($id);
+        $this->selected_id = $id;
+        $this->productSelectedStock = $product->stock;
+        $this->stockToAdd = 0;
+
+        $this->isAddStockOpen = true;
+    }
+    public function closeAddStockModal()
+    {
+        $this->isAddStockOpen = false;
+        $this->reset(['stockToAdd', 'productSelectedStock']);
+    }
+
 
     #[On('noty-updated')]
     #[On('noty-added')]
@@ -191,6 +210,22 @@ class Products extends Component
             $this->dispatch('noty-permission', type: 'USUARIO', name: 'PERMISOS', permission: 'ACTUALIZAR');
         }
     }
+
+    public function addStock()
+    {
+        $this->validate([
+            'stockToAdd' => 'required|numeric|min:1'
+        ]);
+
+        $product = Product::find($this->selected_id);
+        $product->stock += $this->stockToAdd;
+        $product->save();
+
+        $this->dispatch('noty-updated', type: 'STOCK', name: $product->name);
+
+        $this->closeAddStockModal();
+    }
+
 
     public function resetUI()
     {

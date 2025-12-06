@@ -36,12 +36,12 @@
                     @error('price') <span class="text-red-500 text-sm">{{ $message }}</span>@enderror
                 </div>
 
-                <div class="mb-4">
+                 {{--}}<div class="mb-4">
                     <label for="category_stock" class="block text-sm font-medium text-gray-700">Stock</label>
                     <input id="category_stock" type="number" placeholder="Ej. 0"
                         class="input input-bordered input-info mt-1 w-full" wire:model.blur="stock" />
                     @error('stock') <span class="text-red-500 text-sm">{{ $message }}</span>@enderror
-                </div>
+                </div>--}}
 
                 <div class="mb-4">
                     <label for="category_alerts" class="block text-sm font-medium text-gray-700">Alertas</label>
@@ -92,3 +92,32 @@
     </div>
 </div>
 @endif
+@if($isAddStockOpen)
+    <div class="fixed inset-0 flex items-center justify-center z-50 bg-gray-600 bg-opacity-50">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+
+            <h2 class="text-lg font-bold mb-4 text-center">Agregar Stock</h2>
+
+            <p class="text-center mb-4">
+                Producto seleccionado: <strong>{{ $name }}</strong><br>
+                Stock actual: <strong>{{ $productSelectedStock }}</strong>
+            </p>
+
+            <label class="block text-sm font-medium mb-1">Cantidad a agregar</label>
+            <input type="number"
+                   class="input input-bordered w-full"
+                   wire:model="stockToAdd"
+                   min="1">
+            @error('stockToAdd')
+            <span class="text-red-500 text-sm">{{ $message }}</span>
+            @enderror
+
+            <div class="flex justify-end mt-4">
+                <button class="btn btn-outline mr-2" wire:click="closeAddStockModal">Cancelar</button>
+                <button class="btn btn-success" wire:click="addStock">Agregar</button>
+            </div>
+
+        </div>
+    </div>
+@endif
+

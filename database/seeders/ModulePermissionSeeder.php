@@ -36,7 +36,8 @@ class ModulePermissionSeeder extends Seeder
                 'products.view',
                 'products.create',
                 'products.update',
-                'products.delete'
+                'products.delete',
+                'products.addstock'
             ],
             'categories' => [
                 'categories.view',

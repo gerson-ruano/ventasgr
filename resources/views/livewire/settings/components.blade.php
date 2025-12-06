@@ -5,7 +5,6 @@
             <p class="text-blue-800 font-semibold">Selecciona un parámetro.</p>
         </div>
         <livewire:components.back-button/>
-
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach ($meta as $setting)
                 <div class="form-control w-full">
@@ -52,7 +51,13 @@
                 </div>
             @endforeach
         </div>
+
+        <div class="flex justify-end mt-6 space-x-2">
+            <button class="btn btn-outline ml-2" wire:click="resetToOriginal">Cancelar</button>
+            <button class="btn btn-info" wire:click="save">Guardar Cambios</button>
+        </div>
     </div>
 </div>
+
 
 

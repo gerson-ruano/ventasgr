@@ -8,7 +8,9 @@
             {{ $componentName }} | {{ $pageTitle }}
         </h4>
         <div class="ml-2">
-            @include('livewire.components.button_add', ['color' => 'accent' ,'model' => 'openModal', 'icon' => 'plus', 'title' => $componentName])
+            @include('livewire.components.button_add', ['color' => 'accent' ,'model' => 'openModal', 'icon' => 'plus', 'title' => "Nuevo Producto"])
+
+
         </div>
     </div>
 
@@ -48,6 +50,12 @@
                     </td>
                     <td>
                         <div class="flex flex-col sm:flex-row items-center justify-center">
+                            @can('products.addstock')
+                                <button class="btn btn-sm btn-success mr-0 sm:mr-2 mb-2 sm:mb-0"
+                                        wire:click="openAddStockModal({{ $product->id }})">
+                                    + Agregar Stock
+                                </button>
+                            @endcan
                             <button class="btn btn-sm btn-info mr-0 sm:mr-2 mb-2 sm:mb-0"
                                 wire:click="edit({{ $product->id }})" title="Editar">
                                 <i class="fas fa-edit"></i>
@@ -57,6 +65,7 @@
                                 title="Eliminar">
                                 <i class="fas fa-trash"></i>
                             </button>
+
                         </div>
                     </td>
                 </tr>

@@ -24,6 +24,7 @@ class HomeController extends Controller
                 $modules[$key] = [
                     'label' => $module['label'] ?? ucfirst($key),
                     'icon' => $module['icon'] ?? 'fas fa-cube',
+                    'description' => $module['description'] ?? '',
                     'route' => isset($module['children'])
                         ? route('modules.show', ['module' => $key])
                         : route($module['route'] ?? $key),
@@ -50,6 +51,7 @@ class HomeController extends Controller
                 $children[] = [
                     'label' => $child['label'] ?? ucfirst($key),
                     'icon' => $child['icon'] ?? 'fas fa-cube',
+                    'description' => $child['description'] ?? '',
                     'route' => route($child['route']),
                 ];
             }
