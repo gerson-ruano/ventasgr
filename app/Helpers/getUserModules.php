@@ -7,8 +7,12 @@ function getUserModules()
     $modules = config('modules');
     $user = Auth::user();
 
+    if (!$user) {
+        return [];
+    }
+
     $filterByRoles = function ($item) use ($user) {
-        return empty($item['roles']) || $user->hasAnyRole($item['roles']);
+        return empty($item['roles']) || ($user?->hasAnyRole($item['roles']) ?? false);
     };
 
     foreach ($modules as $key => &$module) {

@@ -100,17 +100,19 @@ $routeExists = false;
                                 x-on:profile-updated.window="name = $event.detail.name; profile = $event.detail.profile">
                                 </div>--}}
 
-                                <div x-data="{
+                                @auth
+                                    <div x-data="{
                             name: '{{ auth()->user()->name }}',
                             profile: {{ auth()->user()->profile ? json_encode(auth()->user()->profile) : '{}' }} }">
-                                    <p x-text="name"></p>
-                                    {{--}}<template x-if="Object.keys(profile).length !== 0">
-                                        <p x-text="'' + profile"></p>
-                                    </template>
-                                    <template x-if="Object.keys(profile).length === 0">
-                                        <p>Perfil no configurado</p>
-                                    </template>--}}
-                                </div>
+                                        <p x-text="name"></p>
+                                        {{--}}<template x-if="Object.keys(profile).length !== 0">
+                                            <p x-text="'' + profile"></p>
+                                        </template>
+                                        <template x-if="Object.keys(profile).length === 0">
+                                            <p>Perfil no configurado</p>
+                                        </template>--}}
+                                    </div>
+                                @endauth
 
 
                                 <div class="ms-1">
@@ -131,17 +133,19 @@ $routeExists = false;
                             </x-dropdown-link>
 
                             <!-- Account Management -->
-                            <div x-data="{
+                            @auth
+                                <div x-data="{
                             name: '{{ auth()->user()->name }}',
                             profile: {{ auth()->user()->profile ? json_encode(auth()->user()->profile) : '{}' }} }">
-                                {{--}}<p x-text="name"></p>--}}
-                                <template x-if="Object.keys(profile).length !== 0">
-                                    <p x-text="'' + profile" class="ml-4 mb-1"></p>
-                                </template>
-                                <template x-if="Object.keys(profile).length === 0">
-                                    <p>Perfil no configurado</p>
-                                </template>
-                            </div>
+                                    {{--}}<p x-text="name"></p>--}}
+                                    <template x-if="Object.keys(profile).length !== 0">
+                                        <p x-text="'' + profile" class="ml-4 mb-1"></p>
+                                    </template>
+                                    <template x-if="Object.keys(profile).length === 0">
+                                        <p>Perfil no configurado</p>
+                                    </template>
+                                </div>
+                            @endauth
 
                             <!-- Authentication -->
                             <button wire:click="logout" class="w-full text-start">
@@ -179,7 +183,9 @@ $routeExists = false;
                                 d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>
                         </svg>
                         <input type="checkbox" value="light" class="toggle theme-controller" id="themeToggle"
+                        @auth
                             {{ auth()->user()->tema == 0 ? 'checked' : '' }} />
+                        @endauth
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -197,27 +203,32 @@ $routeExists = false;
                 </div>
 
                 <!-- Responsive Settings Options -->
-                <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
-                    <div class="px-4">
-                        <div class="font-medium text-base text-gray-800 dark:text-gray-200"
-                             x-data="{{ json_encode(['name' => auth()->user()->name]) }}" x-text="name"
-                             x-on:profile-updated.window="name = $event.detail.name"></div>
-                        <div class="font-medium text-sm text-gray-500">{{ auth()->user()->email }}</div>
-                    </div>
 
-                    <div class="mt-3 space-y-1">
-                        <x-responsive-nav-link :href="route('profile')" wire:navigate>
-                            {{ __('Mi Perfil') }}
-                        </x-responsive-nav-link>
+                    <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
+                        @auth
+                        <div class="px-4">
+                            <div class="font-medium text-base text-gray-800 dark:text-gray-200"
+                                 x-data="{{ json_encode(['name' => auth()->user()->name]) }}" x-text="name"
+                                 x-on:profile-updated.window="name = $event.detail.name"></div>
+                            <div class="font-medium text-sm text-gray-500">
+                                {{ auth()->user()->email }}
+                            </div>
+                        </div>
+                        @endauth
 
-
-                        <!-- Authentication -->
-                        <button wire:click="logout" class="w-full text-start">
-                            <x-responsive-nav-link>
-                                {{ __('Salir') }}
+                        <div class="mt-3 space-y-1">
+                            <x-responsive-nav-link :href="route('profile')" wire:navigate>
+                                {{ __('Mi Perfil') }}
                             </x-responsive-nav-link>
-                        </button>
+
+
+                            <!-- Authentication -->
+                            <button wire:click="logout" class="w-full text-start">
+                                <x-responsive-nav-link>
+                                    {{ __('Salir') }}
+                                </x-responsive-nav-link>
+                            </button>
+                        </div>
                     </div>
-                </div>
             </div>
 </nav>

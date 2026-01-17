@@ -19,7 +19,7 @@ return [
     'stock' => [
         'label' => 'Administración de Stock',
         'icon' => 'fas fa-boxes',
-        'roles' => ['Admin ','Employee'],
+        'roles' => ['Admin','Employee'],
         'description' => 'Gestion de Categorias, Productos que se encuentran en el stock del sistema.',
         'children' => [
             'categories' => [

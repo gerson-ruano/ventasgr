@@ -9,8 +9,6 @@
         </h4>
         <div class="ml-2">
             @include('livewire.components.button_add', ['color' => 'accent' ,'model' => 'openModal', 'icon' => 'plus', 'title' => "Nuevo Producto"])
-
-
         </div>
     </div>
 

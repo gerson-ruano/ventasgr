@@ -122,7 +122,7 @@ class Products extends Component
         try {
             // Validación de reglas
             $this->validate();
-            $this->authorize('products.create', Products::class);
+            $this->authorize('products.create', Product::class);
 
             $product = Product::create([
                 'name' => $this->name,

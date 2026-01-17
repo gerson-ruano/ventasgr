@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
       data-theme="{{ auth()->check() && auth()->user()->tema == 0 ? 'dark' : 'light' }}"
-      class="{{ auth()->check() && auth()->user()->tema == 0 ? 'dark' : 'light' }}">
+      class="{{ auth()->check() && auth()->user()?->tema == 0 ? 'dark' : 'light' }}">
 
 <head>
     @include('layouts.theme.styles')

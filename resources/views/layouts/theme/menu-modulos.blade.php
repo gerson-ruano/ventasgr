@@ -1,9 +1,9 @@
 <style>
-    details>summary::-webkit-details-marker {
+    details > summary::-webkit-details-marker {
         display: none;
     }
 
-    details[open]>ul {
+    details[open] > ul {
         margin-top: 0 !important;
         padding-top: 0 !important;
         z-index: 50;
@@ -156,34 +156,36 @@
             <i class="fas fa-home mr-1"></i>Home
         </a>
     </li>
-    @foreach(getUserModules() as $key => $module)
-        @if(isset($module['children']))
-            <li>
-                <details>
-                    <summary class="flex items-center cursor-pointer">
+    @auth
+        @foreach(getUserModules() as $key => $module)
+            @if(isset($module['children']))
+                <li>
+                    <details>
+                        <summary class="flex items-center cursor-pointer">
+                            <i class="{{ $module['icon'] }} mr-1"></i>{{ $module['label'] }}
+                        </summary>
+                        <ul>
+                            @foreach($module['children'] as $childKey => $child)
+                                <li>
+                                    <a href="{{ route($child['route']) }}" class="flex items-center">
+                                        <i class="{{ $child['icon'] }} mr-1"></i>{{ $child['label'] }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </details>
+                </li>
+            @else
+                <li>
+                    <a href="{{ route($module['route']) }}" class="flex items-center">
                         <i class="{{ $module['icon'] }} mr-1"></i>{{ $module['label'] }}
-                    </summary>
-                    <ul>
-                        @foreach($module['children'] as $childKey => $child)
-                            <li>
-                                <a href="{{ route($child['route']) }}" class="flex items-center">
-                                    <i class="{{ $child['icon'] }} mr-1"></i>{{ $child['label'] }}
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </details>
-            </li>
-        @else
-            <li>
-                <a href="{{ route($module['route']) }}" class="flex items-center">
-                    <i class="{{ $module['icon'] }} mr-1"></i>{{ $module['label'] }}
-                </a>
-            </li>
-        @endif
-    @endforeach
+                    </a>
+                </li>
+            @endif
+        @endforeach
+    @endauth
 
     <li class="ml-auto">
-        <livewire:layout.navigation />
+        <livewire:layout.navigation/>
     </li>
 </ul>
