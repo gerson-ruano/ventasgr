@@ -33,6 +33,7 @@ new class extends Component {
     'cashout' => __('Cierre de Caja'),
     'graphics' => __('Estadistica'),
     'configuracion' => __('Configuración'),
+    'modules' => __('Adm. modulos'),
     // Añade más rutas aquí según sea necesario
     ];
 $routeExists = false;

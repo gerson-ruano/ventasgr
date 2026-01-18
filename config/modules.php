@@ -1,7 +1,6 @@
 <?php
 return [
 
-
     'pos' => [
         'label' => 'Ventas',
         'icon' => 'fas fa-shopping-cart',
@@ -38,7 +37,7 @@ return [
             ],
         ],
     ],
-    'graphics' => [
+    'Estadisticas' => [
         'label' => 'Reporteria',
         'icon' => 'fas fa-chart-pie',
         'roles' => ['Admin', 'Employee'],
@@ -100,6 +99,13 @@ return [
                 'route' => 'asignar',
                 'roles' => ['Admin'],
                 'description' => 'Gestión de asignaciòn de permisos a nuestros roles existentes.',
+            ],
+            'modules' => [
+                'label' => 'Asignar Modulos',
+                'icon' => 'fas fa-user-lock',
+                'route' => 'modules',
+                'roles' => ['Admin'],
+                'description' => 'Gestión de asignaciòn de modulos.',
             ],
         ],
     ],

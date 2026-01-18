@@ -93,14 +93,40 @@ class Asignar extends Component
             }
         }
 
-        $modules = Module::where('active', true)->get();
+        //$modules = Module::where('active', true)->get();
 
         return view('livewire.asignar.components', [
             'roles' => $allRoles,
             'permisos' => $permisos,
-            'modules' => $modules,
+            'modules' => $this->modules,
         ])->extends('layouts.app')->section('content');
     }
+
+    public function getModulesProperty()
+    {
+        return Module::whereIn(
+            'key',
+            collect(config('modules'))
+                ->flatMap(fn ($m) => array_keys($m['children'] ?? []))
+        )
+            ->where('active', true)
+            ->orderBy('name')
+            ->get();
+    }
+
+
+    /*private function getChildModules()
+    {
+        // keys de los hijos definidos en config/modules.php
+        $childKeys = collect(config('modules'))
+            ->flatMap(fn ($module) => array_keys($module['children'] ?? []))
+            ->values();
+
+        return Module::whereIn('key', $childKeys)
+            ->where('active', true)
+            ->orderBy('name')
+            ->get();
+    }*/
 
     public function Removeall()
     {

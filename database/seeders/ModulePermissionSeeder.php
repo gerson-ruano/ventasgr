@@ -18,32 +18,32 @@ class ModulePermissionSeeder extends Seeder
                 'users.view',
                 'users.create',
                 'users.update',
-                'users.delete'
+                'users.delete',
             ],
             'roles' => [
                 'roles.view',
                 'roles.create',
                 'roles.update',
-                'roles.delete'
+                'roles.delete',
             ],
             'permissions' => [
                 'permissions.view',
                 'permissions.create',
                 'permissions.update',
-                'permissions.delete'
+                'permissions.delete',
             ],
             'products' => [
                 'products.view',
                 'products.create',
                 'products.update',
                 'products.delete',
-                'products.addstock'
+                'products.addstock',
             ],
             'categories' => [
                 'categories.view',
                 'categories.create',
                 'categories.update',
-                'categories.delete'
+                'categories.delete',
             ],
             'companies' => [
                 'companies.view',
@@ -82,56 +82,64 @@ class ModulePermissionSeeder extends Seeder
             ],
             'pos' => [
                 'pos.view',
-                'pos.details'
+                'pos.details',
             ],
             'api' => [
                 'api.view',
-                'api.create'
+                'api.create',
             ],
-            // Agrega más módulos y sus permisos
         ];
 
-        foreach ($modulePermissions as $moduleName => $permissions) {
-            //$module = Module::where('name', $moduleName)->first();
+        foreach ($modulePermissions as $moduleKey => $permissions) {
+
+            // 🔹 módulo (usar key, NO name)
             $module = Module::firstOrCreate(
-                ['name' => $moduleName],
-                ['description' => $this->translateModule($moduleName)]
+                ['key' => $moduleKey],
+                [
+                    'name' => ucfirst($moduleKey),
+                    'description' => $this->translateModule($moduleKey),
+                    'active' => true,
+                ]
             );
-            if ($module) {
-                foreach ($permissions as $permissionName) {
-                    $permission = Permission::firstOrCreate(['name' => $permissionName]);
-                    $module->assignPermission($permission);
-                }
+
+            foreach ($permissions as $permissionName) {
+
+                $permission = Permission::firstOrCreate([
+                    'name' => $permissionName,
+                    'guard_name' => 'web',
+                ]);
+
+                // 🔗 relacionar módulo ↔ permiso (pivot)
+                $module->permissions()->syncWithoutDetaching($permission);
             }
         }
-        // Crear o buscar el rol Admin
-        $adminRole = Role::firstOrCreate(['name' => 'Admin']);
-        // Asignar todos los permisos al rol Admin
-        $adminRole->givePermissionTo(Permission::all());
 
-        // Crear o buscar el rol Employee
-        // Este rol tendrá permisos limitados comparado con el Admin
-        $adminRole2 = Role::firstOrCreate(['name' => 'Employee']);
-        // Asignar todos los permisos al rol Employee
-        $adminRole2->givePermissionTo(Permission::where('name', 'like', 'pos.%')->get());
-        $adminRole2->givePermissionTo(Permission::where('name', 'like', 'products.%')->get());
-        $adminRole2->givePermissionTo(Permission::where('name', 'like', 'reports.%')->get());
-        $adminRole2->givePermissionTo(Permission::where('name', 'like', 'cashout.%')->get());
+        // 🔐 ROLES
+        $admin = Role::firstOrCreate(['name' => 'Admin']);
+        $admin->syncPermissions(Permission::all());
 
-        // Crear o buscar el rol Seller
-        // Este rol tendrá permisos limitados para ver y realizar acciones en el POS
-        // y no tendrá acceso a la administración de usuarios, roles o permisos
-        $adminRole3 = Role::firstOrCreate(['name' => 'Seller']);
-        // Asignar todos los permisos al rol Admin
-        $adminRole3->givePermissionTo(Permission::where('name', 'like', 'pos.%')->get());
+        $employee = Role::firstOrCreate(['name' => 'Employee']);
+        $employee->givePermissionTo(
+            Permission::where('name', 'like', 'pos.%')->get()
+        );
+        $employee->givePermissionTo(
+            Permission::where('name', 'like', 'products.%')->get()
+        );
+
+        $seller = Role::firstOrCreate(['name' => 'Seller']);
+        $seller->givePermissionTo(
+            Permission::where('name', 'like', 'pos.%')->get()
+        );
     }
-    public function translateModule($moduleName)
+
+        protected function translateModule($key)
     {
-        $traslation = [
+        return [
             'users' => 'Usuarios',
             'roles' => 'Roles',
+            'permissions' => 'Permisos',
             'products' => 'Productos',
-            'categories' => 'Categorias',
+            'categories' => 'Categorías',
             'companies' => 'Compañías',
             'permissions' => 'Permisos',
             'denominations' => 'Monedas',
@@ -140,8 +148,7 @@ class ModulePermissionSeeder extends Seeder
             'graphics' => 'Graficas y Estadistica',
             'assign' => 'Asignar',
             'pos' => 'Ventas',
-            'api' => 'Factus',
-        ];
-        return $traslation[$moduleName] ?? $moduleName;
+            'api' => 'Facturación',
+        ][$key] ?? ucfirst($key);
     }
 }

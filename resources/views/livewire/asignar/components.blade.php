@@ -15,15 +15,26 @@
             <span class="text-red-500 text-sm">{{ $message }}</span>
             @enderror
         </div>
-
         <!-- Selector de Módulos -->
-        <div class="w-full sm:w-auto">
+        {{--}}<div class="w-full sm:w-auto">
             <select wire:model.live="moduleSelected" class="select select-info w-full">
                 <option value="all">Todos los Módulos</option>
                 @foreach ($modules as $module)
-                    <option value="{{ $module->id }}">{{ $module->description }}</option>
+                    <option value="{{ $module->id }}">{{ $module->name }}</option>
                 @endforeach
             </select>
+        </div>--}}
+
+        <div class="w-full sm:w-auto">
+            <select wire:model.live="moduleSelected" class="select select-info w-full">
+                <option value="all">Todos los Módulos</option>
+                @foreach ($this->modules as $module)
+                    <option value="{{ $module->id }}">
+                        {{ $module->name }}
+                    </option>
+                @endforeach
+            </select>
+
         </div>
 
         <!-- Título -->

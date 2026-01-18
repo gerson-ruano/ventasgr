@@ -17,6 +17,7 @@ use App\Livewire\ApiIntegration;
 use App\Http\Controllers\HomeController;
 use App\Livewire\Settings\Components;
 use App\Livewire\Companies;
+use App\Livewire\Admodules;
 
 
 Route::fallback(function () {
@@ -31,7 +32,7 @@ Route::middleware('auth')->post('/user/update-theme', [Users::class, 'updateThem
 Route::middleware(['auth','checkStatus'])->group(function () {
     Route::view('profile', 'profile')->name('profile');
     Route::get('/home', [HomeController::class, 'index'])->middleware(['auth'])->name('home');
-    Route::get('home/{module}', [HomeController::class, 'showModule'])->name('modules.show');
+    Route::get('home/{module}', [HomeController::class, 'show'])->name('modules.show');
 
 //Route::prefix('admin')->middleware(['permission'])->group(function () {
     Route::middleware(['role:Admin'])->group(function () {
@@ -41,6 +42,7 @@ Route::middleware(['auth','checkStatus'])->group(function () {
         Route::get('roles', Roles::class)->name('roles');
         Route::get('permisos', Permisos::class)->name('permisos');
         Route::get('asignar', Asignar::class)->name('asignar');
+        Route::get('modules', Admodules::class)->name('modules');
     });
     Route::middleware(['role:Admin|Employee'])->group(function () {
         Route::get('categories', Categories::class)->name('categories');

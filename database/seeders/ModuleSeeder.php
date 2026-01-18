@@ -17,30 +17,31 @@ class ModuleSeeder extends Seeder
 
         $modulos = config('modules');
 
-        foreach ($modulos as $key => $modulo) {
+        foreach ($modulos as $key => $module) {
 
-            // Si el módulo tiene hijos, los insertamos
-            if (isset($modulo['children']) && is_array($modulo['children'])) {
-                foreach ($modulo['children'] as $childKey => $child) {
+            // 👉 CREAR MÓDULO PADRE
+            $parent = Module::firstOrCreate(
+                ['key' => $key],
+                [
+                    'name' => $module['label'] ?? ucfirst($key),
+                    'description' => $module['description'] ?? null,
+                    'active' => true,
+                ]
+            );
+
+            // 👉 CREAR SUBMÓDULOS
+            if (!empty($module['children'])) {
+                foreach ($module['children'] as $childKey => $child) {
+
                     Module::firstOrCreate(
-                        ['name' => $childKey],
+                        ['key' => $childKey],
                         [
-                            'description' => $child['label'] ?? ucfirst($childKey),
+                            'name' => $child['label'] ?? ucfirst($childKey),
+                            'description' => $child['description'] ?? null,
                             'active' => true,
                         ]
                     );
                 }
-            }
-
-            // Si NO tiene hijos, lo insertamos directamente
-            else {
-                Module::firstOrCreate(
-                    ['name' => $key],
-                    [
-                        'description' => $modulo['label'] ?? ucfirst($key),
-                        'active' => true,
-                    ]
-                );
             }
         }
     }

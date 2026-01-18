@@ -10,7 +10,7 @@ use App\Models\Module;
 class Module extends Model
 {
     //use HasFactory;
-    protected $fillable = ['name', 'description', 'active'];
+    protected $fillable = ['key', 'name', 'active'];
 
     public function permissions()
     {
@@ -25,5 +25,13 @@ class Module extends Model
         }
         return $this->permissions()->syncWithoutDetaching($permission);
     }
+
+    function module_active(string $key): bool
+    {
+        return Module::where('key', $key)
+            ->where('active', true)
+            ->exists();
+    }
+
 
 }

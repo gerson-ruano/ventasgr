@@ -15,43 +15,59 @@
                             <div
                                 class="card bg-base-100 text-gray-800 shadow-xl p-2 hover:shadow-md transition-shadow duration-300">
                                 <div class="card-body text-center p-3">
-                                    <a href="{{ $module['route'] }}"
-                                       class="w-full flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-lg bg-gray-100 hover:bg-gray-300 transition">
-                                        <i class="{{ $module['icon'] }} text-2xl"></i>
-                                        <span class="text-sm sm:text-base break-words text-wrap leading-tight text-gray-700">
-                                        {{ $module['label'] }}
-                                    </span>
-                                    </a>
+
+                                    @if (!empty($module['route']))
+                                        <a href="{{ $module['route'] }}"
+                                           class="w-full flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-lg bg-gray-100 hover:bg-gray-300 transition">
+                                            <i class="{{ $module['icon'] }} text-2xl"></i>
+                                            <span class="text-sm sm:text-base break-words leading-tight text-gray-700">
+                                            {{ $module['label'] }}
+                                        </span>
+                                                        </a>
+                                                    @else
+                                                        {{-- Módulo padre / sin ruta --}}
+                                                        <div
+                                                            class="w-full flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-lg bg-gray-200 cursor-default">
+                                                            <i class="{{ $module['icon'] }} text-2xl"></i>
+                                                            <span class="text-sm sm:text-base break-words leading-tight text-gray-700">
+                                            {{ $module['label'] }}
+                                        </span>
+                                        </div>
+                                    @endif
+
                                 </div>
                             </div>
+
                             @if (!empty($module['description']))
-                                <!-- CARD FLOTANTE EN HOVER -->
-                                <div class="absolute hidden group-hover:block
-                                    bg-gray-200 shadow-xl rounded-lg p-3
-                                    w-60 z-50 left-1/2 -translate-x-1/2
-                                    animate-fade-in text-sm text-dark-600">
+                                <div
+                                    class="absolute hidden group-hover:block
+                           bg-gray-500 text-white shadow-xl rounded-lg p-4
+                           w-64 z-50 bottom-full
+                           text-sm transition-opacity duration-300">
                                     {{ $module['description'] }}
                                 </div>
                             @endif
                         </div>
-
-                        {{--}}<div class="card bg-base-100 shadow-md p-4">
-                            <div class="card-body text-center">
-                                <h2 class="card-title flex justify-center items-center gap-2">
-                                    <a href="{{ $module['route'] }}"
-                                       class="btn btn-xs sm:btn-sm md:btn-md lg:btn-lg xl:btn-xl">
-                                        <i class="{{ $module['icon'] }}"></i> {{ $module['label'] }}
-                                    </a>
-                                </h2>
-
-                                @if(!$module['has_children'])
-                                    <a href="{{ $module['route'] }}" class="btn btn-ghost btn-info btn-sm mt-2">
-                                        <i class="fa fa-arrow-right mr-1"></i> Acceder
-                                    </a>
-                                @endif
-                            </div>
-                        </div>--}}
                     @endforeach
+
+
+                    {{--}}<div class="card bg-base-100 shadow-md p-4">
+                        <div class="card-body text-center">
+                            <h2 class="card-title flex justify-center items-center gap-2">
+                                <a href="{{ $module['route'] }}"
+                                   class="btn btn-xs sm:btn-sm md:btn-md lg:btn-lg xl:btn-xl">
+                                    <i class="{{ $module['icon'] }}"></i> {{ $module['label'] }}
+                                </a>
+                            </h2>
+
+                            @if(!$module['has_children'])
+                                <a href="{{ $module['route'] }}" class="btn btn-ghost btn-info btn-sm mt-2">
+                                    <i class="fa fa-arrow-right mr-1"></i> Acceder
+                                </a>
+                            @endif
+                        </div>
+                    </div>--}}
+                    {{--}}@endforeach--}}
                 </div>
             </div>
         </div>
