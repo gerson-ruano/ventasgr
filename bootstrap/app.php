@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'checkStatus' => \App\Http\Middleware\CheckUserStatusMiddleware::class,
+            'app_languaje' => \App\Http\Middleware\SetLocale::class,
 
         ]);
     })

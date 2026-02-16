@@ -95,14 +95,14 @@ return [
             ],
             'assign' => [
                 'label' => 'Asignar Permisos',
-                'icon' => 'fas fa-check-square',
+                'icon' => 'fas fa-user-check',
                 'route' => 'asignar',
                 'roles' => ['Admin'],
                 'description' => 'Gestión de asignaciòn de permisos a nuestros roles existentes.',
             ],
             'modules' => [
                 'label' => 'Asignar Modulos',
-                'icon' => 'fas fa-user-lock',
+                'icon' => 'fas fa-user-shield',
                 'route' => 'modules',
                 'roles' => ['Admin'],
                 'description' => 'Gestión de asignaciòn de modulos.',

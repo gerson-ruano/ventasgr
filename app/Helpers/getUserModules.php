@@ -17,6 +17,7 @@ function getUserModules()
     $filterByRoles = fn ($item) =>
         empty($item['roles']) || $user->hasAnyRole($item['roles']);
 
+
     $result = [];
 
     foreach ($configModules as $key => $module) {

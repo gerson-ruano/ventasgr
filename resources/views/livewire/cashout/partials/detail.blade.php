@@ -17,6 +17,7 @@
                 </tr>
                 </thead>
                 <tbody>
+                {{--dd($sales)--}}
 
                 @foreach($sales as $index => $item)
                     <tr">

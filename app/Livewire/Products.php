@@ -30,7 +30,7 @@ class Products extends Component
         'cost' => 'required',
         'barcode' => 'required',
         'price' => 'required',
-        'stock' => 'required',
+        'stock' => 'nullable|numeric|min:0',
         'alerts' => 'required',
         'categoryid' => 'required|not_in:Elegir'
     ];
@@ -42,7 +42,7 @@ class Products extends Component
         'barcode.required' => 'El codigo es requerido',
         'price.required' => 'El precio es requerido',
         'cost.required' => 'El costo es requerido',
-        'stock.required' => 'El stock es requerido',
+        //'stock.required' => 'El stock es requerido',
         'alerts.required' => 'Ingresa el valor minimo de existencia',
         'categoryid.required' => 'Elige una categoria',
         'categoryid.not_in' => 'Elige un nombre de categoria diferente a Elegir'
@@ -124,12 +124,13 @@ class Products extends Component
             $this->validate();
             $this->authorize('products.create');
 
+
             $product = Product::create([
                 'name' => $this->name,
                 'cost' => $this->cost,
                 'price' => $this->price,
                 'barcode' => $this->barcode,
-                'stock' => $this->stock,
+                'stock' => $stock->$this->stock ?? 0,
                 'alerts' => $this->alerts,
                 'category_id' => $this->categoryid,
 
