@@ -28,11 +28,11 @@ class Products extends Component
     protected $rules = [
         'name' => 'required|unique:products|min:3',
         'cost' => 'required',
-        'barcode' => 'required',
-        'price' => 'required',
+        'barcode' => 'required|max:100',
+        'price' => 'required|numeric|min:0',
         'stock' => 'nullable|numeric|min:0',
-        'alerts' => 'required',
-        'categoryid' => 'required|not_in:Elegir'
+        'alerts' => 'required|numeric|min:0',
+        'categoryid' => 'required|not_in:Elegir|exists:categories,id'
     ];
 
     protected $messages = [
@@ -40,6 +40,7 @@ class Products extends Component
         'name.unique' => 'Ya existe el nombre del producto',
         'name.min' => 'El nombre del producto tiene que tener por lo menos 3 caracteres',
         'barcode.required' => 'El codigo es requerido',
+        'barcode.unique' => 'Ya existe un producto con este código de barras',
         'price.required' => 'El precio es requerido',
         'cost.required' => 'El costo es requerido',
         //'stock.required' => 'El stock es requerido',
@@ -124,6 +125,16 @@ class Products extends Component
             $this->validate();
             $this->authorize('products.create');
 
+            if (floatval($this->cost) > floatval($this->price)) {
+                $this->dispatch('showNotification', 'El costo no puede ser mayor al precio', 'warning');
+                return;
+            }
+
+            if (intval($this->alerts) < 0) {
+                $this->dispatch('showNotification', 'El valor minimo de existencia no puede ser menor a 0', 'warning');
+                return;
+            }
+
 
             $product = Product::create([
                 'name' => $this->name,
@@ -142,6 +153,7 @@ class Products extends Component
                 $product->image = $customFileName;
                 $product->save();
             }
+            //dd($product);
 
             $this->dispatch('noty-added', type: 'PRODUCTO', name: $product->name);
 
@@ -173,6 +185,7 @@ class Products extends Component
         try {
             // Actualización de reglas de validación para la edición
             $this->rules['name'] = "required|min:3|unique:products,name,{$this->selected_id}";
+            $this->rules['barcode'] .= "|unique:products,barcode,{$this->selected_id}";
 
             // Validación
             $this->validate();

@@ -18,10 +18,10 @@ class ProductSeeder extends Seeder
             'cost'=> 200,
             'price'=> 350,
             'barcode'=>'101',
-            'stock'=> 1000,
+            'stock'=> 100,
             'alerts'=> 10,
             'category_id'=> 1,
-            'image'=>'curso.png'
+            'image'=>'686c6bd17c75d_.png'
         ]);
         Product::create([
             'name'=>'RUNING',
@@ -35,23 +35,33 @@ class ProductSeeder extends Seeder
         ]);
         Product::create([
             'name'=>'IPHONE 13',
-            'cost'=> 10200,
-            'price'=> 3530,
+            'cost'=> 4200,
+            'price'=> 7530,
             'barcode'=>'103',
-            'stock'=> 230,
+            'stock'=> 130,
             'alerts'=> 10,
             'category_id'=> 3,
-            'image'=>'telefono.png'
+            'image'=>'69da9b7bebb78_.jpg'
         ]);
         Product::create([
             'name'=>'PC GAMER',
             'cost'=> 2200,
-            'price'=> 730,
+            'price'=> 5730,
             'barcode'=>'104',
-            'stock'=> 356,
+            'stock'=> 156,
             'alerts'=> 10,
             'category_id'=> 4,
-            'image'=>'computadora.png'
+            'image'=>'public/products/681f973dba57d_.png'
+        ]);
+        Product::create([
+            'name'=>'STOCK_BAJO',
+            'cost'=> 50,
+            'price'=> 90,
+            'barcode'=>'105',
+            'stock'=> 9,
+            'alerts'=> 10,
+            'category_id'=> 5,
+            'image'=>'storage/app/public/products/681f973dba57d_.png'
         ]);
     }
 }

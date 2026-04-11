@@ -540,6 +540,19 @@ class Pos extends Component
         DB::beginTransaction();
 
         try {
+            $items = Cart::content();
+
+            // Validación de stock
+            foreach ($items as $item) {
+                $product = Product::find($item->id);
+                if (!$product) {
+                    throw new \Exception("Producto no encontrado: {$item->name}");
+                }
+                if ($product->stock < $item->qty) {
+                    throw new \Exception("Stock insuficiente para {$product->name}. Disponible: {$product->stock}, Requerido: {$item->qty}");
+                }
+            }
+
             $sale = Sale::create([
                 'total' => $this->totalPrice,
                 'items' => $this->itemsQuantity,
@@ -547,7 +560,7 @@ class Pos extends Component
                 'status' => $tipoPagoSeleccionado,
                 'change' => $this->change,
                 'seller' => $vendedorAgregado,
-                'taxes' => $taxData['totalTaxes'],
+                'taxes' => $taxData['totalTaxes'] ?? 0,
                 'customer_data' => [
                     'name' => $this->customer_name,
                     'nit' => $this->customer_nit,
@@ -558,21 +571,18 @@ class Pos extends Component
                 'user_id' => Auth()->user()->id
             ]);
 
-            if ($sale) {
-                $items = Cart::content();
-                foreach ($items as $item) {
-                    SaleDetail::create([
-                        'price' => $item->price,
-                        'quantity' => $item->qty,
-                        'product_id' => $item->id,
-                        'sale_id' => $sale->id,
-                        'discount' => $this->discount,
-                    ]);
+            foreach ($items as $item) {
+                SaleDetail::create([
+                    'price' => $item->price,
+                    'quantity' => $item->qty,
+                    'product_id' => $item->id,
+                    'sale_id' => $sale->id,
+                    'discount' => $this->discount ?? 0,
+                ]);
 
-                    $product = Product::find($item->id);
-                    $product->stock = $product->stock - $item->quantity;
-                    $product->save();
-                }
+                // Actualizar stock
+                $product = Product::find($item->id);
+                $product->decrement('stock', $item->qty);
 
             }
 

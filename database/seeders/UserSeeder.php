@@ -18,9 +18,9 @@ class UserSeeder extends Seeder
         $employeeRole = Role::firstOrCreate(['name' => 'Employee']);
         $sellerRole = Role::firstOrCreate(['name' => 'Seller']);
         $adminUser = User::create([
-            'name'=>'Gerson Ruano',
+            'name'=>'Administrador',
             'phone'=>'23423424',
-            'email'=>'toge619@gmail.com',
+            'email'=>'admin@ventasgr.com',
             'profile'=>'Admin',
             'status'=>'Active',
             'tema'=> 1,
@@ -30,21 +30,21 @@ class UserSeeder extends Seeder
         $employeeUser = User::create([
             'name'=>'Empleado',
             'phone'=>'10295343',
-            'email'=>'employee@gmail.com',
+            'email'=>'employee@ventasgr.com',
             'profile'=>'Employee',
             'status'=>'Active',
             'tema'=> 1,
-            'password'=>bcrypt('12341234')
+            'password'=>bcrypt('56785678')
         ]);
         $employeeUser->assignRole($employeeRole);
         $sellerUser = User::create([
             'name'=>'Vendedor',
             'phone'=>'12345678',
-            'email'=>'seller@gmail.com',
+            'email'=>'seller@ventasgr.com',
             'profile'=>'Seller',
             'status'=>'Active',
             'tema'=> 1,
-            'password'=>bcrypt('12341234')
+            'password'=>bcrypt('56785678')
         ]);
         $sellerUser->assignRole($sellerRole);
     }

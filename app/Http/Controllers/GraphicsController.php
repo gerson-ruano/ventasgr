@@ -55,13 +55,20 @@ class GraphicsController extends Controller
     }
 
     public function productoStock(){
-        return Product::sum('stock');
+        //return Product::sum('stock');
+        //return Product::pluck('stock')->toArray();
+        $totalStock = [
+            'labels' => ['Producto A', 'Producto B', 'Producto C', 'Producto D'],
+            'data' => [150, 80, 200, 45]
+        ];
+        return $totalStock;
     }
     public function productTotales(){
         return Product::count();
     }
     public function ventasTotales(){
-        return Sale::count();
+        $excludedStatuses = ['CANCELLED'];
+        return Sale::whereNotIn('status', $excludedStatuses)->count();
     }
     public function UsersTotales(){
         return User::count();
@@ -137,17 +144,18 @@ class GraphicsController extends Controller
     }
 
     public function obtenerDatosDeVentas($stock) {
-        return Sale::join('sale_details', 'sales.id', '=', 'sale_details.sale_id')
+        return Sale::where('sales.status', '!=', 'cancelled')  // ← Excluir ventas anuladas
+        ->join('sale_details', 'sales.id', '=', 'sale_details.sale_id')
             ->join('products', 'sale_details.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
             ->select(
                 'products.id as product_id',
+                'products.name as product_name',
                 'categories.name as category_name',
                 DB::raw('SUM(sale_details.quantity) as total_quantity')
             )
-            //->whereNotNull('products.stock') // Ignorar productos con stock nulo
-            //->where('products.stock', '<=', $stock)
-            ->groupBy('products.id', 'categories.name') // Agrupa por los campos seleccionados
+            ->groupBy('products.id', 'products.name', 'categories.name')
+            ->orderBy('total_quantity', 'desc')
             ->get();
 
     }

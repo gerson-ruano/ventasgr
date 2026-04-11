@@ -10,6 +10,8 @@ use App\Models\Sale;
 use App\Models\SaleDetail;
 use Livewire\WithPagination;
 use Carbon\Carbon;
+use App\Models\Product;
+use DB;
 
 class Reports extends Component
 {
@@ -201,45 +203,131 @@ class Reports extends Component
 
     public function update()
     {
+        DB::beginTransaction();
+
         try {
             $this->validate([
-                'selectedStatus' => 'required|not_in:Elegir', // Asegúrate de que 'Elegir' sea el valor por defecto
+                'selectedStatus' => 'required|in:PENDING,PAID,CANCELLED',
             ]);
             $this->authorize('reports.update', $this->selected_id);
 
-            // Obtén la venta correspondiente por su ID
             $sale = Sale::find($this->selectedId);
-            //dd($sale);
 
-            // Verifica si se encontró la venta
-            if ($sale) {
-
-                // Verifica si el estado es el mismo que el actual
-                if ($sale->status == $this->selectedStatus) {
-                    // Envía mensaje si el estado no ha cambiado
-                    $this->dispatch('noty-done', type: 'info', message: 'Venta sin Modificar');
-                    return;
-                }
-                // Asigna el nuevo estado al modelo de venta
-                $sale->status = $this->selectedStatus; // Asumiendo que 'type' contiene el nuevo estado
-                $sale->updated_at = now();   //Fecha de actualizacion
-                $sale->mod_id = auth()->user()->id; //Nombre del usuario o id de quien lo actualizo
-
-                // Guarda el cambio en la base de datos
-                $sale->save();
-
-                // Puedes emitir un evento o realizar alguna acción adicional si es necesario
-                $this->resetUI();
-                $this->dispatch('noty-done', type: 'success', message: 'Venta actualizada con éxito');
-            } else {
-                $this->dispatch('showNotification', 'Debe seleccionar un Tipo de ESTADO', 'dark');
+            if (!$sale) {
+                $this->dispatch('showNotification', 'Venta no encontrada', 'error');
+                DB::rollBack();
                 return;
-                // Manejo si la venta no existe
-                // Puedes emitir un mensaje de error o realizar alguna acción apropiada
             }
-        } catch (\Illuminate\Auth\Access\AuthorizationException $exception) {
-            // Notificación de error de autorización
-            $this->dispatch('noty-permission', type: 'USUARIO', name: 'PERMISOS', permission: 'ACTUALIZAR');
+
+            $oldStatus = $sale->status;
+            $newStatus = $this->selectedStatus;
+
+            // Si no hay cambio, salir
+            if ($oldStatus == $newStatus) {
+                $this->dispatch('noty-done', type: 'info', message: 'Venta sin modificar');
+                DB::rollBack();
+                return;
+            }
+
+            // Determinar acción según la transición
+            $action = match(true) {
+                ($newStatus == 'CANCELLED' && in_array($oldStatus, ['PENDING', 'PAID'])) => 'cancel',
+                ($oldStatus == 'CANCELLED' && in_array($newStatus, ['PENDING', 'PAID'])) => 'reactivate',
+                default => 'none'
+            };
+
+            // Ejecutar acción correspondiente
+            $message = match($action) {
+                'cancel' => $this->returnStock($sale->id) ? 'Venta cancelada. Stock restaurado correctamente' : 'Error al restaurar stock',
+                'reactivate' => $this->deductStock($sale->id) ? 'Venta reactivada. Stock actualizado correctamente' : 'Error al actualizar stock',
+                default => 'Estado actualizado sin cambios en el stock'
+            };
+
+            // Actualizar estado de la venta
+            $sale->status = $newStatus;
+            $sale->updated_at = now();
+            $sale->mod_id = auth()->user()->id;
+            $sale->save();
+
+            DB::commit();
+
+            $this->resetUI();
+            $this->dispatch('noty-done', type: 'success', message: $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al actualizar venta: ' . $e->getMessage(), [
+                'sale_id' => $this->selectedId,
+                'new_status' => $this->selectedStatus ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+            $this->dispatch('noty-done', type: 'error', message: 'Error: ' . $e->getMessage());
+        }
+    }
+
+// Método para REGRESAR el stock cuando se anula una venta
+    private function returnStock($saleId)
+    {
+        try {
+            $saleDetails = SaleDetail::where('sale_id', $saleId)->get();
+
+            if ($saleDetails->isEmpty()) {
+                \Log::warning("No se encontraron detalles para la venta ID: {$saleId}");
+                return;
+            }
+
+            foreach ($saleDetails as $detail) {
+                $product = Product::find($detail->product_id);
+
+                if (!$product) {
+                    \Log::warning("Producto no encontrado ID: {$detail->product_id}");
+                    continue;
+                }
+
+                // Regresar el stock
+                $product->stock += $detail->quantity;
+                $product->save();
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('Error al regresar stock: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    // Método para DESCONTAR el stock cuando se anula una venta
+    private function deductStock($saleId)
+    {
+        try {
+            $saleDetails = SaleDetail::where('sale_id', $saleId)->get();
+
+            if ($saleDetails->isEmpty()) {
+                \Log::warning("No se encontraron detalles para la venta ID: {$saleId}");
+                return;
+            }
+
+            // Primero verificar que hay suficiente stock
+            foreach ($saleDetails as $detail) {
+                $product = Product::find($detail->product_id);
+                if ($product && $product->stock < $detail->quantity) {
+                    throw new \Exception("No hay suficiente stock de {$product->name} para reactivar la venta. Stock actual: {$product->stock}, Necesario: {$detail->quantity}");
+                }
+            }
+
+            // Si todo está bien, proceder a descontar
+            foreach ($saleDetails as $detail) {
+                $product = Product::find($detail->product_id);
+                if ($product) {
+                    $product->stock -= $detail->quantity;
+                    $product->save();
+                }
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('Error al descontar stock: ' . $e->getMessage());
+            throw $e;
         }
     }
 
@@ -252,7 +340,8 @@ class Reports extends Component
         $this->resetErrorBag();
     }
 
-    protected $listeners = [
+    protected
+        $listeners = [
         'closeModal' => 'closeModal'
     ];
 

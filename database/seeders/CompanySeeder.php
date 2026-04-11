@@ -18,8 +18,8 @@ class CompanySeeder extends Seeder
             'address'=> 'Ciudad de Guatemala',
             'email'=> 'ventasgr@gmail.com',
             'phone'=> '22334455',
-            'nit'=> '123456789',
-            'image'=> 'img/ventasgr_logo.png'
+            'nit'=> '1234567',
+            'image'=> '69da985981217_.png'
         ]);
     }
 }

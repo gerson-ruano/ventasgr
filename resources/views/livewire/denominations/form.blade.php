@@ -20,7 +20,7 @@
 
             <div class="mb-4">
                 <label for="value" class="block text-sm font-medium text-gray-700">Valor</label>
-                <input id="value" type="number" placeholder="Ej. 10"
+                <input id="value" type="number" step="any" placeholder="Ej. 10 o 0.25"
                     class="input input-bordered input-info mt-1 w-full" wire:model.blur="value" />
                 @error('value') <span class="text-red-500 text-sm">{{ $message }}</span>@enderror
             </div>

@@ -15,19 +15,23 @@ class CategorySeeder extends Seeder
     {
         Category::create([
             'name'=> 'CURSOS',
-            'image'=> 'laravel.png'
+            'image'=> '686c6bd17c75d_.png'
         ]);
         Category::create([
             'name'=> 'ZAPATOS',
-            'image'=> 'zapatos.png'
+            'image'=> '666dfed328708_.webp'
         ]);
         Category::create([
             'name'=> 'CELULARES',
-            'image'=> 'telefono.png'
+            'image'=> '69da9b7bebb78_.jpg'
         ]);
         Category::create([
             'name'=> 'COMPUTADORAS',
-            'image'=> 'computadora.png'
+            'image'=> '681f973dba57d_.png'
+        ]);
+        Category::create([
+            'name'=> 'STOCK_BAJO',
+            'image'=> 'IMAGE.png'
         ]);
     }
 }
