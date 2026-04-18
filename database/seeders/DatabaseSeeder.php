@@ -11,6 +11,8 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      */
+
+    /* php artisan migrate:refresh --seed */
     public function run(): void
     {
         // User::factory(10)->create();
@@ -28,5 +30,7 @@ class DatabaseSeeder extends Seeder
         $this->call(UserSeeder::class);
         $this->call(ModuleSeeder::class);
         $this->call(ModulePermissionSeeder::class);
+        $this->call(DepartamentoSeeder::class);
+        $this->call(MunicipioSeeder::class);
     }
 }

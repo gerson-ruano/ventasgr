@@ -28,4 +28,5 @@
 {{--<partials> src="{{ asset('js/keypress.js') }}"</partials>--}}
 @include('livewire.pos.scripts.shortcuts')
 @include('livewire.pos.scripts.general')
+@include('livewire.pos.scripts.departamentos')
 {{--}}@include('livewire.pos.scripts.scan')--}}

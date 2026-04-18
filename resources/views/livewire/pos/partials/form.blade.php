@@ -52,6 +52,35 @@
                     </div>
                 </div>
 
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <!-- Departamento -->
+                    <div>
+                        @include('livewire.components.select_filtro', [
+                            'model' => 'customer_departamento_id',
+                            'title' => 'Departamento',
+                            'default' => 'Seleccionar Departamento',
+                            'val_default' => '',
+                            'valores' => $departamentos,
+                            'id_campo' => 'id',
+                            'nombre_campo' => 'nombre',
+                        ])
+                    </div>
+
+                    <!-- Municipio -->
+                    <div>
+                        @include('livewire.components.select_filtro', [
+                            'model' => 'customer_municipio_id',
+                            'title' => 'Municipio',
+                            'default' => 'Seleccionar Municipio',
+                            'val_default' => '',
+                            'valores' => $municipios,
+                            'id_campo' => 'id',
+                            'nombre_campo' => 'nombre',
+                            'disabled' => !$customer_departamento_id,
+                        ])
+                    </div>
+                </div>
+
                 {{-- Referencia de pago --}}
                 @if ($customer_method_page > 1 && $customer_method_page < 4 )
                     <div class="w-full text-center mt-2">

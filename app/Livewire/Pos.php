@@ -12,11 +12,14 @@ use App\Models\Product;
 use App\Models\SaleDetail;
 use DB;
 use Gloudemans\Shoppingcart\Facades\Cart;
+use App\Models\Departamento;
+use App\Models\Municipio;
 
 class Pos extends Component
 {
     public $totalPrice, $itemsQuantity, $change, $tipoPago, $vendedorSeleccionado;
     public $customer_name, $customer_nit, $customer_method_page, $customer_ref_page, $customer_address;
+    public $customer_departamento_id, $customer_municipio_id;
     public $customer_data = [];
     public $vendedores = [];
     public $valores = [];
@@ -30,6 +33,7 @@ class Pos extends Component
     public $empresa;
     public $isModalOpen = false;
     public $currency = ''; // Moneda por defecto
+    public $municipios = [];
 
 
     public function mount()
@@ -46,6 +50,7 @@ class Pos extends Component
         $this->getNextSaleNumber();
         $this->empresa = $this->companyVentas();
         $this->currency = setting('app_currency', 'Q'); // Obtener la moneda configurada
+        $this->municipios = collect();
     }
 
     protected $rules = [
@@ -54,6 +59,8 @@ class Pos extends Component
         'customer_method_page' => 'required',
         'customer_ref_page' => 'nullable|max:50',
         'customer_address' => 'nullable|max:30',
+        'customer_departamento_id' => 'nullable|exists:departamentos,id',
+        'customer_municipio_id' => 'nullable|exists:municipios,id',
     ];
 
     protected $messages = [
@@ -63,6 +70,8 @@ class Pos extends Component
         'customer_nit.min' => 'NIT debe tener al menos 8 numeros',
         'customer_ref_page.max' => 'El campo referencia de pago debe tener como maximo 30 caracteres',
         'customer_address.max' => 'El campo direcciòn debe tener como maximo 50 caracteres',
+        'customer_departamento_id.exists' => 'El departamento seleccionado no es válido',
+        'customer_municipio_id.exists' => 'El municipio seleccionado no es válido',
     ];
 
 
@@ -72,14 +81,31 @@ class Pos extends Component
         return view('livewire.pos.components', [
             'denominations' => Denomination::orderBy('value', 'desc')->get(),
             'cart' => Cart::content(),
+            'departamentos' => Departamento::all(),
+            'municipios' => $this->municipios,
         ])
             ->extends('layouts.app')
             ->section('content');
     }
 
+    public function updatedCustomerDepartamentoId($value)
+    {
+        if ($value) {
+            $this->municipios = Municipio::where('departamento_id', $value)->get();
+            $this->customer_municipio_id = null; // Resetear municipio cuando cambia departamento
+        } else {
+            $this->municipios = collect();
+            $this->customer_municipio_id = null;
+        }
+    }
+
     public function openModal()
     {
         $this->isModalOpen = true;
+        if ($this->customer_departamento_id) {
+            $this->municipios = Municipio::where('departamento_id', $this->customer_departamento_id)->get();
+        }
+
     }
 
     public function closeModal()
@@ -92,6 +118,28 @@ class Pos extends Component
     {
         $this->validate();
 
+        $departamentoNombre = null;
+        $municipioNombre = null;
+
+        if ($this->customer_departamento_id) {
+            $departamento = Departamento::find($this->customer_departamento_id);
+            $departamentoNombre = $departamento ? $departamento->nombre : null;
+        }
+
+        if ($this->customer_municipio_id) {
+            $municipio = Municipio::find($this->customer_municipio_id);
+            $municipioNombre = $municipio ? $municipio->nombre : null;
+        }
+
+        // Construir dirección completa si hay departamento y municipio
+        $direccionCompleta = $this->customer_address;
+        if ($municipioNombre) {
+            $direccionCompleta = ($direccionCompleta ? $direccionCompleta . ', ' : '') . $municipioNombre;
+        }
+        if ($departamentoNombre) {
+            $direccionCompleta = ($direccionCompleta ? $direccionCompleta . ', ' : '') . $departamentoNombre;
+        }
+
         // Guardar en el array temporal
         $this->customer_data = [
             'name' => $this->customer_name,
@@ -99,6 +147,10 @@ class Pos extends Component
             'method_page' => $this->customer_method_page,
             'ref_page' => $this->customer_ref_page,
             'address' => $this->customer_address,
+            'departamento_id' => $this->customer_departamento_id,
+            'municipio_id' => $this->customer_municipio_id,
+            'departamento_nombre' => $departamentoNombre,
+            'municipio_nombre' => $municipioNombre,
         ];
         $this->isModalOpen = false;
         $this->dispatch('showNotification', 'Cliente ' . $this->customer_name . ' agregado exitosamente', 'success');
@@ -138,6 +190,9 @@ class Pos extends Component
         $this->customer_method_page = '';
         $this->customer_ref_page = '';
         $this->customer_address = '';
+        $this->customer_departamento_id = null;
+        $this->customer_municipio_id = null;
+        $this->municipios = collect();
 
         //$this->dispatch('showNotification', 'Cliente ' . $this->customer_name . ' eliminado exitosamente', 'error');
     }
@@ -567,6 +622,8 @@ class Pos extends Component
                     'method_page' => $this->customer_method_page,
                     'ref_page' => $this->customer_ref_page,
                     'address' => $this->customer_address,
+                    'departamento_id' => $this->customer_departamento_id,
+                    'municipio_id' => $this->customer_municipio_id,
                 ],
                 'user_id' => Auth()->user()->id
             ]);
@@ -670,6 +727,9 @@ class Pos extends Component
         $this->customer_method_page = '';
         $this->customer_ref_page = '';
         $this->customer_address = '';
+        $this->customer_departamento_id = null;
+        $this->customer_municipio_id = null;
+        $this->municipios = collect();
     }
 
     public function updatedVendedorSeleccionado($value)
