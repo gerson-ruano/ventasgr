@@ -4,8 +4,8 @@
     @if(count($modules) > 0)
         <div class="text-center mt-8">
             <livewire:components.back-button route="{{ route('home') }}"/>
-            <h1 class="text-2xl font-bold mb-2 text-gray-300 dark:text-gray-800">Bienvenido a tu Panel de Módulos</h1>
-            <p class="text-gray-300 font-semibold mb-2">Selecciona un módulo para comenzar...</p>
+            <h1 class="text-3xl font-bold mb-2 text-blue-800 dark:text-gray-800">Bienvenido a tu Panel de Módulos</h1>
+            <p class="text-blue-500 font-semibold mb-2">Selecciona un módulo para comenzar...</p>
         </div>
         <div class="flex justify-center items-center p-4">
             <div class="card w-full max-w-4xl">

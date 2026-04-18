@@ -5,9 +5,32 @@
 
 @layer base {
     .fondo-app {
-    background: #667db6; /* fallback for old browsers */
-    background: -webkit-linear-gradient(to right, #667db6, #0082c8, #0082c8, #667db6); /* Chrome 10-25, Safari 5.1-6 */
-    background: linear-gradient(to right, #667db6, #0082c8, #0082c8, #667db6); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+        /* Fallback para navegadores antiguos */
+        background-color: #667db6;
+
+        /* Imagen de fondo */
+        background-image: url('/img/fondo3.avif');
+
+        /* Ajustes */
+        background-size: cover;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+
+        /* Si quieres oscurecer la imagen para mejor legibilidad */
+        position: relative;
+    }
+
+    /* Opcional: Oscurecer la imagen para que el texto sea legible */
+    .fondo-app::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5); /* Ajusta la opacidad */
+        z-index: -1;
     }
 
     .dark .fondo-app {

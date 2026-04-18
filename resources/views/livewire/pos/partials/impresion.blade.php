@@ -63,21 +63,31 @@
             <!-- Datos de la venta -->
             @if(!empty($customer_data))
                 <div class="p-2 bg-gray-100 rounded text-center text-label">
-                    <div class="flex justify-between">
-                        <strong>Metodo de Pago:</strong>
-                        <p>{{ $this->obtenerMetodoPago($customer_data['method_page'])}}
-                    </div>
-                    <div class="flex justify-between">
-                        <strong>Ref. de Pago:</strong>
-                        <p>{{ $customer_data['ref_page'] ?? 'N/A'}}
-                    </div>
-                    <div class="flex justify-between">
-                        <strong>NIT:</strong>
-                        <p>{{ $customer_data['nit'] ?? 'N/A' }}
-                    </div>
-                    <div class="flex justify-between">
-                        <strong>Dirección:</strong>
-                        <p>{{ $customer_data['address'] ?? 'N/A' }}
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <div class="flex justify-between">
+                            <strong>Metodo de Pago:</strong>
+                            <p>{{ $this->obtenerMetodoPago($customer_data['method_page']) }}</p>
+                        </div>
+                        <div class="flex justify-between">
+                            <strong>Ref. de Pago:</strong>
+                            <p>{{ $customer_data['ref_page'] ?? 'N/A' }}</p>
+                        </div>
+                        <div class="flex justify-between">
+                            <strong>NIT:</strong>
+                            <p>{{ $customer_data['nit'] ?? 'N/A' }}</p>
+                        </div>
+                        <div class="flex justify-between">
+                            <strong>Dirección:</strong>
+                            <p>{{ $customer_data['address'] ?? 'N/A' }}</p>
+                        </div>
+                        <div class="flex justify-between">
+                            <strong>Departamento:</strong>
+                            <p>{{ $customer_data['departamento_nombre'] ?? 'N/A' }}</p>
+                        </div>
+                        <div class="flex justify-between">
+                            <strong>Municipio:</strong>
+                            <p>{{ $customer_data['municipio_nombre'] ?? 'N/A' }}</p>
+                        </div>
                     </div>
                 </div>
             @endif

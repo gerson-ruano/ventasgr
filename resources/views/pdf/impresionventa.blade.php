@@ -45,6 +45,12 @@
                                         <div class="customer-row">
                                             <span>Dirección: <strong>{{ $customer['address'] ?? 'N/A' }}</strong></span>
                                         </div>
+                                        <div class="customer-row">
+                                            <span>Departamento: <strong>{{ $customer['departamento_nombre'] ?? 'N/A' }}</strong></span>
+                                        </div>
+                                        <div class="customer-row">
+                                            <span>Municipio: <strong>{{ $customer['municipio_nombre'] ?? 'N/A' }}</strong></span>
+                                        </div>
                                     </div>
                                     <div class="customer-column">
                                         <div class="customer-row">

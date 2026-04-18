@@ -42,5 +42,4 @@
 @include('layouts.theme.scripts')
 
 </body>
-
 </html>
