@@ -5,8 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte de Venta</title>
-    <link rel="stylesheet" href="{{ asset('css/custom_pdf.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/pdf.css') }}">
+    {{--<link rel="stylesheet" href="{{ asset('css/custom_pdf.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/pdf.css') }}">--}}
+    {{-- 👇 Lee el CSS del filesystem, no por URL --}}
+    <style>
+        {!! file_get_contents(public_path('css/pdf.css')) !!}
+    </style>
 </head>
 
 <body>
@@ -96,7 +100,7 @@
                 <td>{{$currency}}. {{ number_format($item->price, 2) }}</td>
                 <td align="center">{{ $item->subtotal }}</td>
                 <td align="center">
-                    @php
+                    {{--@php
                         $imagePath = 'storage/products/' . $item->options->image;
                         $defaultImagePath = 'img/noimg.jpg';
                     @endphp
@@ -107,6 +111,16 @@
                     @else
                         <img src="{{ asset($defaultImagePath) }}" alt="Imagen por defecto" height="20" width="20"
                              class="rounded">
+                    @endif--}}
+                    @php
+                        $imagePath = public_path('storage/products/' . $item->options->image);
+                        $defaultImagePath = public_path('img/noimg.jpg');
+                    @endphp
+
+                    @if (file_exists($imagePath))
+                        <img src="{{ $imagePath }}" height="20" width="20" class="rounded">
+                    @else
+                        <img src="{{ $defaultImagePath }}" height="20" width="20" class="rounded">
                     @endif
                 </td>
             </tr>

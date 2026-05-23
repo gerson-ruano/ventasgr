@@ -5,8 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cierre de Caja</title>
-    <link rel="stylesheet" href="{{ asset('css/custom_pdf.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/pdf.css') }}">
+    {{--}}<link rel="stylesheet" href="{{ asset('css/custom_pdf.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/pdf.css') }}">--}}
+    <style>
+        {!! file_get_contents(public_path('css/pdf.css')) !!}
+    </style>
 </head>
 @php
     $statusTranslations = [

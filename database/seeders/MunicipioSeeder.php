@@ -15,7 +15,7 @@ class MunicipioSeeder extends Seeder
     public function run(): void
     {
         // Limpiar la tabla antes de insertar (opcional)
-        Municipio::truncate();
+        #Municipio::truncate();
 
         // Obtener todos los departamentos
         $departamentos = Departamento::pluck('id', 'nombre');

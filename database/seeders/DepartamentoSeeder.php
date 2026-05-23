@@ -13,7 +13,7 @@ class DepartamentoSeeder extends Seeder
      */
     public function run(): void
     {
-        Departamento::truncate();
+        #Departamento::truncate();
 
         $departamentos = [
             'Alta Verapaz', 'Baja Verapaz', 'Chimaltenango', 'Chiquimula',

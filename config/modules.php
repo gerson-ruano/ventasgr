@@ -44,7 +44,7 @@ return [
                 'description' => 'Mòdulo de Cierre de caja de las ventas realizadas.',
             ],
             'reports' => [
-                'label' => 'Ventas',
+                'label' => 'Ventas Realizadas',
                 'icon' => 'fas fa-file-alt',
                 'route' => 'reports',
                 'roles' => ['Admin', 'Employee'],
@@ -60,7 +60,7 @@ return [
         ],
     ],
     'Administración' => [
-        'label' => 'Usuarios',
+        'label' => 'Administracion de Usuarios',
         'icon' => 'fas fa-users',
         'roles' => ['Admin'],
         'description' => 'Gestión de nuestros usuarios y privilegios del sistema.',

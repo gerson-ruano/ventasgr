@@ -41,7 +41,7 @@ $scrollIntoViewJsSnippet = ($scrollTo !== false)
 
             <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
-                {{--<p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
+                    <p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
                         <span>{!! __('Showing') !!}</span>
                         <span class="font-medium">{{ $paginator->firstItem() }}</span>
                         <span>{!! __('to') !!}</span>
@@ -49,17 +49,9 @@ $scrollIntoViewJsSnippet = ($scrollTo !== false)
                         <span>{!! __('of') !!}</span>
                         <span class="font-medium">{{ $paginator->total() }}</span>
                         <span>{!! __('results') !!}</span>
-                    </p>--}}
-                    <p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
-                        <span>{!! __('pagination.showing') !!}</span>
-                        <span class="font-medium">{{ $paginator->firstItem() }}</span>
-                        <span>{!! __('pagination.to') !!}</span>
-                        <span class="font-medium">{{ $paginator->lastItem() }}</span>
-                        <span>{!! __('pagination.of') !!}</span>
-                        <span class="font-medium">{{ $paginator->total() }}</span>
-                        <span>{!! __('pagination.results') !!}</span>
                     </p>
                 </div>
+
                 <div>
                     <span class="relative z-0 inline-flex rtl:flex-row-reverse rounded-md shadow-sm">
                         <span>
