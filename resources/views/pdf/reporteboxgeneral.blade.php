@@ -10,7 +10,7 @@
     {{-- CSS general estilo Factus --}}
     <style>
         {!! file_get_contents(public_path('css/pdf.css')) !!}
-        {!! file_get_contents(public_path('css/pdf_horizontal.css')) !!}
+        {!! file_get_contents(public_path('css/pdf_general.css')) !!}
     </style>
 
     {{-- Este reporte necesita formato horizontal --}}
