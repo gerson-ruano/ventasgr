@@ -85,13 +85,13 @@
                             'height' => 'h-[350px]',
                             'checkEmpty' => fn($data) => empty($data) || count($data) == 0
                         ],
-                        [
+                        /*[
                             'id' => 'chartReport',
                             'title' => 'productos en el stock',
                             'data' => $totalStock,
                             'height' => 'h-[350px]',
                             'checkEmpty' => fn($data) => empty($data)
-                        ],
+                        ],*/
                         [
                             'id' => 'chartTopUsers',
                             'title' => 'ventas de usuarios',
@@ -186,8 +186,6 @@
         @if(!empty($ventasTipoPago))
             <div id="ventasTipoPago" hidden>@json($ventasTipoPago)</div>
         @endif
-
-        <!--script type="module" src="{{ asset('js/scripts.js') }}"></script-->
     </div>
 @endsection
 

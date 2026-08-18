@@ -1,149 +1,441 @@
+/* ============================================================
+   CONFIGURACIÓN GENERAL
+   ============================================================ */
 
-.table-items {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.table-items th,
-.table-items td {
-    border: 1px solid #ddd;
-    text-align: center;
-    padding: 8px;
+@page {
+    size: A4 portrait;
+    margin: 18mm 15mm 18mm 15mm;
 }
 
-.table-items th {
-    background-color: #f2f2f2;
-}
-
-.rounded-table {
-    width: 100%;
-    margin-bottom: 30px;
-    border-collapse: collapse; /* Asegura que no haya espacios entre las celdas */
-    border-radius: 10px; /* Ajusta el radio según lo necesites */
-    overflow: hidden; /* Asegura que el borde redondeado funcione correctamente */
-}
-
-.rounded-table th, .rounded-table td {
-    border: 1px solid #ddd; /* Bordes de las celdas */
-    padding: 8px; /* Espaciado interno */
-}
-
-.rounded-table th {
-    background-color: #f2f2f2; /* Color de fondo de los encabezados */
-    text-align: left; /* Alineación del texto */
-}
-
-.footer {
-    position: fixed;
-    bottom: -30px;
-    left: 0px;
-    right: 0px;
-    height: 50px;
-    text-align: center;
-    line-height: 35px;
-}
-
-.customer-info {
-    width: 100%;
-    margin-top: 10px;
-    background-color: #f9f9f9;
-    padding: 10px;
-    border-radius: 5px;
-}
-.customer-columns {
-    width: 100%;
-    display: table;
-}
-.customer-column {
-    display: table-cell;
-    width: 50%;
-    vertical-align: top;
-    padding: 5px;
-}
-.customer-row {
-    margin-bottom: 2px;
+* {
+    box-sizing: border-box;
 }
 
 body {
-    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-    }
+    font-family: DejaVu Sans, Arial, sans-serif;
+    font-size: 8px;
 
-    th, td {
-        border: 1px solid #000;
-        padding: 8px;
-        text-align: center;
-        font-family: Arial, sans-serif;
-        font-size: 12px;
-    }
+    color: #263442;
+    background: #ffffff;
+}
 
-    thead th {
-        background-color: #f2f2f2;
-        font-weight: bold;
-    }
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
 
-    tbody tr:nth-child(even) {
-        background-color: #f9f9f9;
-    }
+.text-center {
+    text-align: center;
+}
 
-    h6 {
-        margin: 0;
-        font-weight: normal;
-        font-size: 12px;
-    }
+.text-right {
+    text-align: right;
+}
 
-    .total {
-        font-weight: bold;
-        font-size: 14px;
-    }
+.text-left {
+    text-align: left;
+}
 
-    tfoot {
-        font-weight: bold;
-    }
+.money {
+    text-align: right;
+    white-space: nowrap;
+}
 
-    .page-break {
-        page-break-after: always;
-    }
+.font-bold {
+    font-weight: bold;
+}
 
-    .pagination {
-        text-align: center;
-        margin-top: 20px;
-        font-size: 12px;
-    }
 
-    .table-items tfoot td {
-        background-color: #f2f2f2;
-        font-weight: bold;
-    }
+/* ============================================================
+   ENCABEZADO ESTILO FACTUS
+   ============================================================ */
 
-    .pagenum:before {
-        content: counter(page);
-    }
-    .status-message {
-        font-size: 14px;
-        font-weight: bold;
-        margin-top: 0;
-        padding: 0;
-        line-height: 1;
-    }
-    .text-blue {
-        color: blue;
-    }
+.header-table {
+    width: 100%;
 
-    .text-red {
-        color: red;
-    }
+    margin-bottom: 18px;
 
-    .text-green {
-        color: green;
-    }
-    .text-gray {
-        color: gray;
-    }
+    border-top: 1px solid #c7d1d9;
+}
 
+.header-table td {
+    border: 0;
+    vertical-align: middle;
+}
+
+.header-logo {
+    width: 25%;
+    padding: 12px 5px;
+    text-align: center;
+}
+
+.header-document {
+    width: 50%;
+    padding: 12px 10px;
+    text-align: center;
+}
+
+.header-company {
+    width: 25%;
+    padding: 12px 0 12px 8px;
+    vertical-align: top !important;
+}
+
+.invoice-logo {
+    max-width: 80px;
+    max-height: 80px;
+}
+
+.document-title {
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.document-number {
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 7px;
+}
+
+.company-name {
+    font-size: 10px;
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+
+.company-data {
+    font-size: 7px;
+    line-height: 1.5;
+}
+
+
+/* ============================================================
+   ESTADOS
+   ============================================================ */
+
+.status {
+    display: inline-block;
+
+    padding: 2px 6px;
+    margin-top: 4px;
+
+    font-size: 7px;
+    font-weight: bold;
+
+    border-radius: 2px;
+}
+
+.status-paid {
+    color: #247244;
+    background: #edf8f1;
+}
+
+.status-pending {
+    color: #8a6800;
+    background: #fff8dc;
+}
+
+.status-cancelled {
+    color: #6b7280;
+    background: #f0f2f4;
+}
+
+
+/* ============================================================
+   INFORMACIÓN GENERAL
+   ============================================================ */
+
+.general-info {
+    width: 100%;
+    margin-bottom: 22px;
+}
+
+.general-info > tbody > tr > td {
+    vertical-align: top;
+}
+
+.customer-column {
+    width: 66%;
+    padding-right: 25px;
+}
+
+.document-column {
+    width: 34%;
+}
+
+.info-table {
+    width: 100%;
+}
+
+.info-table td {
+    padding: 4px 6px;
+
+    border: 1px solid #d2dbe2;
+
+    font-size: 7.5px;
+}
+
+.info-table .label {
+    width: 27%;
+    font-weight: bold;
+    background: #fbfcfd;
+}
+
+
+/* ============================================================
+   TABLAS DE DATOS
+   ============================================================ */
+
+.table-factus,
+.products-table {
+    width: 100%;
+    margin-bottom: 22px;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.table-factus thead,
+.products-table thead {
+    display: table-header-group;
+}
+
+.table-factus tr,
+.products-table tr {
+    page-break-inside: avoid;
+}
+
+.table-factus th,
+.products-table th {
+    padding: 6px 5px;
+
+    border-top: 1px solid #aebdc8;
+    border-bottom: 1px solid #aebdc8;
+    border-right: 1px solid #d4dce2;
+
+    background: #ffffff;
+
+    font-size: 7.5px;
+    font-weight: bold;
+
+    text-align: center;
+}
+
+.table-factus th:first-child,
+.products-table th:first-child {
+    border-left: 1px solid #d4dce2;
+}
+
+.table-factus td,
+.products-table td {
+    padding: 7px 5px;
+
+    border-bottom: 1px solid #d8dfe5;
+    border-right: 1px solid #d8dfe5;
+
+    font-size: 7.5px;
+
+    vertical-align: middle;
+
+    word-wrap: break-word;
+}
+
+.table-factus td:first-child,
+.products-table td:first-child {
+    border-left: 1px solid #d8dfe5;
+}
+
+.table-factus tbody tr:nth-child(even),
+.products-table tbody tr:nth-child(even) {
+    background: #fbfcfd;
+}
+
+
+/* ============================================================
+   OBSERVACIONES + TOTALES
+   ============================================================ */
+
+.summary-table {
+    width: 100%;
+    margin-bottom: 22px;
+}
+
+.summary-table > tbody > tr > th {
+    padding: 6px;
+
+    border: 1px solid #c7d1d9;
+
+    background: #ffffff;
+
+    font-size: 8px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.observations-title {
+    width: 63%;
+}
+
+.totals-title {
+    width: 37%;
+}
+
+.observations-cell {
+    height: 120px;
+
+    padding: 10px;
+
+    border-left: 1px solid #c7d1d9;
+    border-right: 1px solid #c7d1d9;
+    border-bottom: 1px solid #c7d1d9;
+
+    vertical-align: top;
+
+    font-size: 7.5px;
+    line-height: 1.6;
+
+    color: #566471;
+}
+
+.totals-cell {
+    padding: 0;
+
+    border-right: 1px solid #c7d1d9;
+    border-bottom: 1px solid #c7d1d9;
+
+    vertical-align: top;
+}
+
+.totals-inner {
+    width: 100%;
+}
+
+.totals-inner td {
+    padding: 6px 7px;
+
+    border-bottom: 1px solid #d8dfe5;
+
+    font-size: 7.5px;
+}
+
+.totals-inner tr:last-child td {
+    border-bottom: 0;
+}
+
+.grand-total td {
+    font-size: 9px;
+    font-weight: bold;
+
+    background: #f7f9fa;
+}
+
+
+/* ============================================================
+   DETALLES DE PAGO
+   ============================================================ */
+
+.payment-section {
+    width: 100%;
+    margin-bottom: 25px;
+}
+
+.payment-section td {
+    border: 0;
+    vertical-align: top;
+}
+
+.operation-column {
+    width: 55%;
+    padding-right: 35px;
+}
+
+.payment-column {
+    width: 45%;
+    padding-left: 15px;
+}
+
+.section-title {
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+
+    border-bottom: 1px solid #c7d1d9;
+
+    font-size: 8px;
+    font-weight: bold;
+}
+
+.section-label {
+    font-size: 7px;
+    color: #64727e;
+}
+
+.section-value {
+    font-size: 8px;
+    font-weight: bold;
+
+    margin-bottom: 6px;
+}
+
+.payment-total {
+    margin-top: 6px;
+
+    font-size: 11px;
+    font-weight: bold;
+}
+
+
+/* ============================================================
+   AUDITORÍA
+   ============================================================ */
+
+.audit-table {
+    width: 100%;
+
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+.audit-table td {
+    padding: 5px 7px;
+
+    border: 1px solid #d2dbe2;
+
+    font-size: 7px;
+}
+
+.audit-table .label {
+    font-weight: bold;
+    background: #fbfcfd;
+}
+
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.footer {
+    position: fixed;
+
+    left: 0;
+    right: 0;
+    bottom: -12mm;
+
+    padding-top: 5px;
+
+    border-top: 1px solid #c7d1d9;
+
+    font-size: 7px;
+
+    color: #687581;
+}
+
+.footer td {
+    border: 0;
+}
+
+.pagenum:before {
+    content: counter(page);
 }

@@ -112,7 +112,38 @@ class ExportController extends Controller
     }
 
     // IMPRESION DE NUEVA VENTA
-    public function reportVenta($change, $efectivo, $seller, $getNextSaleNumber, $totalTaxes, $discount, $customer_data )
+    public function reportVenta(
+        $change,
+        $efectivo,
+        $seller,
+        $getNextSaleNumber,
+        $totalTaxes,
+        $discount,
+        $customer_data
+    ) {
+
+        $data = $this->getVentaReportData(
+            $change,
+            $efectivo,
+            $seller,
+            $getNextSaleNumber,
+            $totalTaxes,
+            $discount,
+            $customer_data
+        );
+
+
+        $pdf = $this->generatePdf(
+            'pdf.impresionventa',
+            $data
+        );
+
+
+        return $pdf->stream(
+            "Venta_{$getNextSaleNumber}_{$this->currentDate}.pdf"
+        );
+    }
+    /*public function reportVenta($change, $efectivo, $seller, $getNextSaleNumber, $totalTaxes, $discount, $customer_data )
     {
 
         $cart = Cart::content(); // Obtén los datos que deseas mostrar en el reporte
@@ -152,6 +183,89 @@ class ExportController extends Controller
 
         // Devolver el PDF como una respuesta de streaming
         return $pdf->stream("Venta_{$getNextSaleNumber}_{$this->currentDate}.pdf");
+    }*/
+
+    // REPORTE DE NUEVA VENTA - FORMATO TÉRMICO
+    public function reportVentaTermica(
+        $change,
+        $efectivo,
+        $seller,
+        $getNextSaleNumber,
+        $totalTaxes,
+        $discount,
+        $customer_data
+    ) {
+
+        $data = $this->getVentaReportData(
+            $change,
+            $efectivo,
+            $seller,
+            $getNextSaleNumber,
+            $totalTaxes,
+            $discount,
+            $customer_data
+        );
+
+
+        $pdf = $this->generatePdf(
+            'pdf.impresion_termica',
+            $data
+        );
+
+
+        /*
+         * Cantidad de productos
+         */
+        $cantidadProductos = 0;
+
+
+        if (
+            isset($data['cart']) &&
+            $data['cart']->isNotEmpty()
+        ) {
+
+            $cantidadProductos =
+                $data['cart']->count();
+
+        } elseif (
+            isset($data['details']) &&
+            $data['details']->isNotEmpty()
+        ) {
+
+            $cantidadProductos =
+                $data['details']->count();
+        }
+
+
+        /*
+         * Altura aproximada del ticket.
+         */
+        $altoBase = 400;
+
+        $altoProducto = 35;
+
+        $altoTicket =
+            $altoBase +
+            (
+                $cantidadProductos *
+                $altoProducto
+            );
+
+
+        /*
+         * Papel térmico de 80 mm.
+         */
+        $pdf->setPaper([
+            0,
+            0,
+            226.77,
+            $altoTicket
+        ]);
+
+
+        return $pdf->stream(
+            "Ticket_{$getNextSaleNumber}_{$this->currentDate}.pdf"
+        );
     }
 
     // IMPRESION DE VENTA - DETALLES
@@ -282,6 +396,90 @@ class ExportController extends Controller
     {
         $currentUser = Auth::user();
         return $currentUser;
+    }
+
+    private function getVentaReportData(
+        $change,
+        $efectivo,
+        $seller,
+        $getNextSaleNumber,
+        $totalTaxes,
+        $discount,
+        $customer_data
+    ) {
+        $cart = Cart::content();
+
+        $statusMessage = getSaleStatusMessage(
+            $getNextSaleNumber
+        );
+
+        $sale = Sale::with([
+            'details.product'
+        ])->find($getNextSaleNumber);
+
+        $empresa = $this->companyVentas();
+
+        $usuario = $this->currentUser();
+
+        $customerData = json_decode(
+            urldecode($customer_data),
+            true
+        );
+
+        /*
+         * Si por algún motivo customer_data
+         * no contiene JSON válido.
+         */
+        if (!is_array($customerData)) {
+            $customerData = [];
+        }
+
+        /*
+         * Si la venta aún no existe,
+         * dejamos details como Collection
+         * para poder usar isNotEmpty(), sum(), etc.
+         */
+        if (!$sale) {
+
+            $sale = (object) [
+                'details' => collect()
+            ];
+        }
+
+        $metodoPago = $this->obtenerMetodoPago(
+            $customerData['method_page'] ?? null
+        );
+
+        return [
+
+            'cart' => $cart,
+
+            'getNextSaleNumber' => $getNextSaleNumber,
+
+            'details' => $sale->details,
+
+            'seller' => $seller,
+
+            'usuario' => $usuario,
+
+            'empresa' => $empresa,
+
+            'statusMessage' => $statusMessage,
+
+            'change' => $change,
+
+            'efectivo' => $efectivo,
+
+            'discount' => $discount,
+
+            'totalTaxes' => $totalTaxes,
+
+            'customer' => $customerData,
+
+            'metodoPago' => $metodoPago,
+
+            'currency' => $this->currency,
+        ];
     }
 
 }

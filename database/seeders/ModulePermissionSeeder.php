@@ -145,7 +145,7 @@ class ModulePermissionSeeder extends Seeder
             'denominations' => 'Monedas',
             'cashout' => 'Cierre Caja',
             'reports' => 'Reportes',
-            'graphics' => 'Graficas y Estadistica',
+            'graphics' => 'Graficas',
             'assign' => 'Asignar',
             'pos' => 'Ventas',
             'api' => 'Facturación',

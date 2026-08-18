@@ -47,7 +47,7 @@ class Asignar extends Component
             'denominations' => 'Monedas',
             'cashout' => 'Cierre Caja',
             'reports' => 'Reportes',
-            'graphics' => 'Graficas y Estadistica',
+            'graphics' => 'Graficas',
             'assign' => 'Asignar',
             'pos' => 'Ventas',
             'api' => 'Factus',
@@ -104,6 +104,22 @@ class Asignar extends Component
 
     public function getModulesProperty()
     {
+        $moduleKeys = collect(config('modules'))
+            ->flatMap(function ($module) {
+                return array_keys($module['children'] ?? []);
+            })
+            ->values()
+            ->toArray();
+
+        return Module::whereIn('key', $moduleKeys)
+            ->where('active', true)
+            ->whereHas('permissions')
+            ->withCount('permissions')
+            ->orderBy('name')
+            ->get();
+    }
+    /*public function getModulesProperty()
+    {
         return Module::whereIn(
             'key',
             collect(config('modules'))
@@ -112,7 +128,7 @@ class Asignar extends Component
             ->where('active', true)
             ->orderBy('name')
             ->get();
-    }
+    }*/
 
 
     /*private function getChildModules()

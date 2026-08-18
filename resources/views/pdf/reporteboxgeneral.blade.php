@@ -1,207 +1,694 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes</title>
-    {{--}}<link rel="stylesheet" href="{{ asset('css/custom_pdf.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/pdf.css') }}">--}}
+
+    <title>Cierre de Caja</title>
+
+    {{-- CSS general estilo Factus --}}
     <style>
         {!! file_get_contents(public_path('css/pdf.css')) !!}
+        {!! file_get_contents(public_path('css/pdf_horizontal.css')) !!}
     </style>
-    <style>
-        .table-items {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            table-layout: fixed; /* Hace que las celdas tengan un ancho fijo */
-        }
 
-        .table-items th,
-        .table-items td {
-            border: 1px solid #ddd;
-            text-align: center;
-            padding: 4px; /* Reduce el padding para hacer las celdas más pequeñas */
-            font-size: 12px; /* Reduce el tamaño de la fuente */
-            word-wrap: break-word; /* Permite que el texto se ajuste dentro de la celda */
-        }
+    {{-- Este reporte necesita formato horizontal --}}
 
-        .table-items th {
-            background-color: #f2f2f2;
-            font-size: 12px; /* Reduce el tamaño de la fuente de los encabezados */
-        }
-
-        .table-items tbody tr:last-child td {
-            border-bottom: 1px solid #ddd;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: -20px; /* Espacio adicional para evitar montado */
-            left: 0px;
-            right: 0px;
-            height: 50px;
-            text-align: center;
-            line-height: 35px;
-            font-size: 10px;
-        }
-
-        .page-break {
-            page-break-after: always;
-        }
-
-        .pagenum:before {
-            content: counter(page);
-        }
-
-        body {
-            counter-reset: page;
-        }
-
-        .invoice-logo {
-            max-width: 80px; /* Ajusta el tamaño del logo según el espacio disponible */
-            margin-bottom: 0;
-        }
-    </style>
 </head>
+
+
 @php
+
+    /*
+    |--------------------------------------------------------------------------
+    | TRADUCCIONES
+    |--------------------------------------------------------------------------
+    */
+
     $statusTranslations = [
+
         'PAID' => 'Pagado',
+
         'CANCELLED' => 'Anulado',
+
         'PENDING' => 'Pendiente'
+
     ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOTALES GENERALES
+    |--------------------------------------------------------------------------
+    */
+
+    $totalVentas = $data->count();
+
+    $totalImporte = $data->sum('total');
+
+    $totalItems = $data->sum('items');
+
 @endphp
 
+
 <body>
-<section class="header" style="top: -287px;">
-    <table cellpadding="0" cellspacing="0" width="100%">
-        <section class="header" style="margin-bottom: 10px;">
-            <h1 style="font-size: 24px; margin: 0; font-weight: bold; text-align: center;">{{ $empresa->name }}</h1>
-            <table width="100%" cellpadding="0" cellspacing="0" style="text-align: left;">
-                <tr>
-                    <td width="20%" style="vertical-align: top; padding: 10px;">
-                        {{--dd($empresa->imagen--}}
 
-                        <img src="{{ $empresa->imagen_pdf }}" alt="Logo VentasGR" class="invoice-logo" style="max-width: 80px;">
-                        {{--}}<img src="{{ public_path('img/ventasgr_logo.png') }}" alt="Logo VentasGR" class="invoice-logo" style="max-width: 80px;">--}}
-                    </td>
 
-                    <!--td colspan="2" style="padding: 10px; text-align: center;"-->
-                    <td width="50%">
+{{-- ================================================================ --}}
+{{-- ENCABEZADO --}}
+{{-- ================================================================ --}}
 
-                            <strong>Cierre de Caja</strong><br>
+<table class="header-table">
 
-                            Fechas: <strong>{{ $fromDate  }}</strong> al <strong>{{ $toDate }}</strong><br>
+    <tr>
 
-                            Fecha de consulta: <strong>{{ \Carbon\Carbon::now()->format('d-m-Y') }}</strong>
 
-                        <br>
-                        Usuario:  <strong>{{ $user }}</strong>
-                    </td>--}}
-                    <td width="30%">
-                        <div class="empresa-header" style="line-height: 1.2;">
-                            <p style="font-size: 14px; margin: 0;">Dirección: <strong>{{ $empresa->address }}</strong></p>
-                            <p style="font-size: 14px; margin: 0;">Nit: <strong>{{ $empresa->nit }}</strong></p>
-                            <p style="font-size: 14px; margin: 0;">Email: <strong>{{ $empresa->email }}</strong></p>
-                            <p style="font-size: 14px; margin: 0;">Teléfono: <strong>{{ $empresa->phone }}</strong></p>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </section>
-        <tr>
+        {{-- LOGO --}}
+        <td class="header-logo">
 
-        </tr>
-    </table>
-</section>
+            @if(!empty($empresa->imagen_pdf))
 
-<section style="margin-top: 0px">
-    <table cellpadding="0" cellspacing="0" class="table-items" width="100%">
-        <thead>
-        <tr>
-            <th width="5%">No.</th>
-            <th width="8%">VENTA</th>
-            <th width="12%">IMPORTE</th>
-            <th width="10%">CANTIDAD</th>
-            <th width="10%">ESTADO</th>
-            <th width="12%">CLIENTE</th>
-            <th width="12%">USUARIO</th>
-            <th width="16%">FECHA/HORA</th>
-        </tr>
-        </thead>
-        <tbody>
+                <img
+                    src="{{ $empresa->imagen_pdf }}"
+                    alt="{{ $empresa->name }}"
+                    class="invoice-logo"
+                >
+
+            @endif
+
+        </td>
+
+
+        {{-- DOCUMENTO --}}
+        <td class="header-document">
+
+            <div class="document-title">
+
+                CIERRE DE CAJA
+
+            </div>
+
+
+            <div class="company-name">
+
+                {{ strtoupper($empresa->name) }}
+
+            </div>
+
+
+            <div
+                style="
+                    font-size: 7.5px;
+                    color: #60707e;
+                    margin-top: 4px;
+                "
+            >
+
+                Reporte general de movimientos de venta
+
+            </div>
+
+        </td>
+
+
+        {{-- EMPRESA --}}
+        <td class="header-company">
+
+            <div class="company-data">
+
+                <strong>
+                    {{ $empresa->name }}
+                </strong>
+
+                <br>
+
+                NIT:
+                <strong>
+                    {{ $empresa->nit ?? 'N/A' }}
+                </strong>
+
+                <br>
+
+                Dirección:
+                <strong>
+                    {{ $empresa->address ?? 'N/A' }}
+                </strong>
+
+                <br>
+
+                Email:
+                <strong>
+                    {{ $empresa->email ?? 'N/A' }}
+                </strong>
+
+                <br>
+
+                Teléfono:
+                <strong>
+                    {{ $empresa->phone ?? 'N/A' }}
+                </strong>
+
+            </div>
+
+        </td>
+
+    </tr>
+
+</table>
+
+
+
+{{-- ================================================================ --}}
+{{-- INFORMACIÓN DEL CIERRE --}}
+{{-- ================================================================ --}}
+
+<table class="report-info">
+
+    <tr>
+
+
+        <td class="label">
+
+            Tipo:
+
+        </td>
+
+
+        <td class="value">
+
+            <strong>
+                Cierre de Caja
+            </strong>
+
+        </td>
+
+
+        <td class="label">
+
+            Generado por:
+
+        </td>
+
+
+        <td class="value">
+
+            <strong>
+                {{ $user }}
+            </strong>
+
+        </td>
+
+
+    </tr>
+
+
+    <tr>
+
+
+        <td class="label">
+
+            Período:
+
+        </td>
+
+
+        <td class="value">
+
+            {{ $fromDate }}
+
+            al
+
+            {{ $toDate }}
+
+        </td>
+
+
+        <td class="label">
+
+            Fecha consulta:
+
+        </td>
+
+
+        <td class="value">
+
+            {{ \Carbon\Carbon::now()->format('d-m-Y H:i:s') }}
+
+        </td>
+
+
+    </tr>
+
+</table>
+
+
+
+{{-- ================================================================ --}}
+{{-- TABLA PRINCIPAL --}}
+{{-- ================================================================ --}}
+
+<table class="table-factus">
+
+    <thead>
+
+    <tr>
+
+
+        <th width="5%">
+
+            #
+
+        </th>
+
+
+        <th width="8%">
+
+            Venta
+
+        </th>
+
+
+        <th width="13%">
+
+            Importe
+
+        </th>
+
+
+        <th width="9%">
+
+            Cantidad
+
+        </th>
+
+
+        <th width="11%">
+
+            Estado
+
+        </th>
+
+
+        <th width="16%">
+
+            Cliente / Vendedor
+
+        </th>
+
+
+        <th width="17%">
+
+            Usuario
+
+        </th>
+
+
+        <th width="21%">
+
+            Fecha / Hora
+
+        </th>
+
+
+    </tr>
+
+    </thead>
+
+
+    <tbody>
+
+
+    @forelse($data as $index => $item)
+
+
         @php
-            $firstPageCount = 35;  // Número de registros en la primera página
-            $otherPagesCount = 42; // Número de registros en las páginas siguientes
+
+            $statusText =
+                $statusTranslations[$item->status]
+                ?? $item->status;
+
+
+            $statusClass = match($item->status) {
+
+                'PAID' =>
+                    'status-paid',
+
+                'PENDING' =>
+                    'status-pending',
+
+                'CANCELLED' =>
+                    'status-cancelled',
+
+                default =>
+                    ''
+
+            };
+
         @endphp
 
-        @foreach ($data as $index => $item)
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $item->id }}</td>
-                <td style="text-align: right;">{{ number_format($item->total, 2) }}</td>
-                <td>{{ $item->items }}</td>
-                <td>{{ $statusTranslations[$item->status] ?? $item->status }}</td>
-                <td>{{ $item->seller_name }}</td>
-                <td>{{ $user }}</td>
-                <td>{{ $item->created_at->format('d-m-Y H:i') }}</td>
-            </tr>
-            @if (($index + 1) == $firstPageCount && !$loop->last)
-                <tr>
-                    <td colspan="8" style="border: none; height: 1px;"></td>
-                </tr>
-                <section class="footer table-items">
-                    <table cellpadding="0" cellspacing="0" width="100%">
-                        <tr>
-                            <td width="20%">Sistema {{ $empresa->name }}</td>
-                            <td width="60%" class="text-center">GR</td>
-                            <td width="20%" class="text-center">Pág. <span class="pagenum"></span></td>
-                        </tr>
-                    </table>
-                </section>
-                <tr class="page-break"></tr>
-            @elseif ($index + 1 > $firstPageCount && ($index + 1 - $firstPageCount) % $otherPagesCount == 0 && !$loop->last)
-                <tr>
-                    <td colspan="8" style="border: none; height: 1px;"></td>
-                </tr>
-                <section class="footer table-items">
-                    <table cellpadding="0" cellspacing="0" width="100%">
-                        <tr>
-                            <td width="20%">Sistema {{ $empresa->name }} </td>
-                            <td width="60%" class="text-center">GR</td>
-                            <td width="20%" class="text-center">Pág. <span class="pagenum"></span></td>
-                        </tr>
-                    </table>
-                </section>
-            <tr class="page-break"></tr>
-            @endif
-        @endforeach
-        </tbody>
-        <tfoot>
-        <tr>
-            <td colspan="2"><b>TOTALES:</b></td>
-            <td style="text-align: right;"><b>{{$currency}}. {{ number_format($data->sum('total'), 2) }}</b></td>
-            <td><b>{{ $data->sum('items') }}</b></td>
-            <td colspan="4"></td>
-        </tr>
-        </tfoot>
-    </table>
-</section>
-<div class="align">
-    <span style="font-size: 10px">Usuario: <strong>{{ $usuario->name }}</strong></span>
-    <span style="font-size: 10px">Fecha de Consulta: <strong>{{ \Carbon\Carbon::now()->format('H:i:s d-m-Y') }}</strong></span>
-</div>
-<section class="footer table-items">
-    <table cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-            <td width="20%">Sistema {{ $empresa->name }}</td>
-            <td width="60%" class="text-center">GR</td>
-            <td width="20%" class="text-center">Pág. <span class="pagenum"></span></td>
-        </tr>
-    </table>
-</section>
-</body>
-</html>
 
+        <tr>
+
+
+            <td class="text-center">
+
+                {{ $index + 1 }}
+
+            </td>
+
+
+            <td class="text-center">
+
+                {{ $item->id }}
+
+            </td>
+
+
+            <td class="money">
+
+                {{ $currency }}.
+                {{ number_format(
+                    $item->total,
+                    2
+                ) }}
+
+            </td>
+
+
+            <td class="text-center">
+
+                {{ $item->items }}
+
+            </td>
+
+
+            <td class="text-center">
+
+                <span class="status {{ $statusClass }}">
+
+                    {{ $statusText }}
+
+                </span>
+
+            </td>
+
+
+            <td>
+
+                {{ $item->seller_name ?? 'Consumidor Final' }}
+
+            </td>
+
+
+            <td>
+
+                {{ $user }}
+
+            </td>
+
+
+            <td class="text-center">
+
+                {{ $item->created_at
+                    ->format('d-m-Y H:i') }}
+
+            </td>
+
+
+        </tr>
+
+
+    @empty
+
+
+        <tr>
+
+            <td
+                colspan="8"
+                class="text-center"
+                style="padding: 25px;"
+            >
+
+                No existen ventas registradas
+                para el período seleccionado.
+
+            </td>
+
+        </tr>
+
+
+    @endforelse
+
+
+    </tbody>
+
+</table>
+
+
+
+{{-- ================================================================ --}}
+{{-- RESUMEN DEL CIERRE --}}
+{{-- ================================================================ --}}
+
+<table class="report-summary">
+
+    <tr>
+
+
+        {{-- INFORMACIÓN --}}
+        <td class="report-summary-left">
+
+
+            <div class="report-summary-title">
+
+                Información del cierre
+
+            </div>
+
+
+            <div class="report-summary-data">
+
+
+                Período consultado:
+
+                <strong>
+
+                    {{ $fromDate }}
+
+                    al
+
+                    {{ $toDate }}
+
+                </strong>
+
+
+                <br>
+
+
+                Cierre generado por:
+
+                <strong>
+
+                    {{ $usuario->name }}
+
+                </strong>
+
+
+                <br>
+
+
+                Fecha de generación:
+
+                <strong>
+
+                    {{ \Carbon\Carbon::now()
+                        ->format('d-m-Y H:i:s') }}
+
+                </strong>
+
+
+                <br>
+
+
+                Registros encontrados:
+
+                <strong>
+
+                    {{ number_format(
+                        $totalVentas
+                    ) }}
+
+                </strong>
+
+
+            </div>
+
+
+        </td>
+
+
+
+        {{-- TOTALES --}}
+        <td class="report-summary-right">
+
+
+            <table class="report-totals">
+
+
+                <thead>
+
+                <tr>
+
+                    <th colspan="2">
+
+                        Totales del cierre
+
+                    </th>
+
+                </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                <tr>
+
+                    <td>
+
+                        Total de ventas
+
+                    </td>
+
+
+                    <td class="text-right">
+
+                        {{ number_format(
+                            $totalVentas
+                        ) }}
+
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <td>
+
+                        Productos vendidos
+
+                    </td>
+
+
+                    <td class="text-right">
+
+                        {{ number_format(
+                            $totalItems
+                        ) }}
+
+                    </td>
+
+                </tr>
+
+
+                <tr class="report-total-final">
+
+
+                    <td>
+
+                        Importe total
+
+                    </td>
+
+
+                    <td class="money">
+
+                        {{ $currency }}.
+                        {{ number_format(
+                            $totalImporte,
+                            2
+                        ) }}
+
+                    </td>
+
+
+                </tr>
+
+
+                </tbody>
+
+            </table>
+
+
+        </td>
+
+
+    </tr>
+
+</table>
+
+
+
+{{-- ================================================================ --}}
+{{-- FOOTER --}}
+{{-- ================================================================ --}}
+
+<section class="footer">
+
+    <table>
+
+        <tr>
+
+
+            <td width="33%">
+
+                Sistema
+                {{ $empresa->name }}
+
+            </td>
+
+
+            <td
+                width="34%"
+                class="text-center"
+            >
+
+                Cierre de Caja
+
+            </td>
+
+
+            <td
+                width="33%"
+                class="text-right"
+            >
+
+                Página
+
+                <span class="pagenum"></span>
+
+            </td>
+
+
+        </tr>
+
+    </table>
+
+</section>
+
+
+<script type="text/php">
+
+    @include('pdf.partials.pdf_script')
+
+</script>
+
+
+</body>
+
+</html>
 
 

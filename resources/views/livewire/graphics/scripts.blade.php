@@ -1,429 +1,858 @@
 <script>
-    // Elimina la línea "import Chart from 'chart.js/auto';" del principio
-    // En su lugar, asegúrate que Chart.js esté cargado globalmente
+    (() => {
 
-    // Configuración común para todas las gráficas
-    const commonChartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top',
+        'use strict';
+
+        const chartColors = {
+            primary: 'rgb(45, 76, 110)',
+            primaryTransparent: 'rgba(45, 76, 110, 0.12)',
+
+            blue: 'rgb(59, 130, 246)',
+            blueTransparent: 'rgba(59, 130, 246, 0.70)',
+
+            green: 'rgb(34, 197, 94)',
+            greenTransparent: 'rgba(34, 197, 94, 0.70)',
+
+            red: 'rgb(239, 68, 68)',
+            redTransparent: 'rgba(239, 68, 68, 0.70)',
+
+            yellow: 'rgb(245, 158, 11)',
+            yellowTransparent: 'rgba(245, 158, 11, 0.70)',
+
+            purple: 'rgb(139, 92, 246)',
+            purpleTransparent: 'rgba(139, 92, 246, 0.70)',
+
+            pink: 'rgb(236, 72, 153)',
+            pinkTransparent: 'rgba(236, 72, 153, 0.70)',
+
+            cyan: 'rgb(6, 182, 212)',
+            cyanTransparent: 'rgba(6, 182, 212, 0.70)'
+        };
+
+
+        const getDashboardData = () => {
+
+            const element = document.getElementById('dashboard-data');
+
+            if (!element) {
+                console.error('No existe #dashboard-data');
+                return {};
             }
-        }
-    };
 
-    // Función para obtener datos del DOM de forma segura
-    const getSafeJsonData = (elementId, attribute = 'textContent') => {
-        const element = document.getElementById(elementId);
-        if (!element) return null;
-        try {
-            return JSON.parse(attribute === 'textContent' ?
-                element.textContent :
-                element.getAttribute(attribute));
-        } catch (e) {
-            console.error(`Error parsing data for ${elementId}:`, e);
-            return null;
-        }
-    };
+            try {
 
-    // Función para obtener datos de atributos específicos
-    const getAttributeData = (elementId, attribute) => {
-        const element = document.getElementById(elementId);
-        if (!element) return null;
-        try {
-            return JSON.parse(element.getAttribute(attribute));
-        } catch (e) {
-            console.error(`Error parsing attribute ${attribute} for ${elementId}:`, e);
-            return null;
-        }
-    };
+                const data = JSON.parse(element.textContent.trim());
 
-    // Colores predefinidos para uso consistente
-    const chartColors = {
-        primary: 'rgb(45, 76, 110)',
-        secondary: 'rgb(255, 99, 132)',
-        success: 'rgb(75, 192, 192)',
-        warning: 'rgb(255, 205, 86)',
-        info: 'rgb(54, 162, 235)',
-        gray: 'rgb(201, 203, 207)'
-    };
+                console.log('DATOS DASHBOARD:', data);
 
-    // Función para crear una gráfica
-    const createChart = (canvasId, config) => {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) {
-            console.warn(`Canvas ${canvasId} no encontrado`);
-            return null;
-        }
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return null;
-        return new Chart(ctx, {
-            ...config,
-            options: { ...commonChartOptions, ...config.options }
-        });
-    };
+                return data;
 
-    // Función para calcular línea de tendencia
-    const calculateTrendline = (x, y) => {
-        if (!x || !y || x.length !== y.length || x.length === 0) return [];
-        const n = x.length;
-        const xySum = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
-        const xSum = x.reduce((sum, xi) => sum + xi, 0);
-        const ySum = y.reduce((sum, yi) => sum + yi, 0);
-        const xxSum = x.reduce((sum, xi) => sum + xi * xi, 0);
+            } catch (error) {
 
-        const m = (n * xySum - xSum * ySum) / (n * xxSum - xSum * xSum);
-        const b = (ySum - m * xSum) / n;
+                console.error(
+                    'Error procesando dashboard-data:',
+                    error
+                );
 
-        return x.map(xi => m * xi + b);
-    };
-
-    // Reemplaza la función chartReportConfig con esta versión más flexible
-    const chartReportConfig = (data) => {
-        console.log('Datos recibidos en chartReport:', data);
-
-        let labels = [];
-        let values = [];
-
-        // Detectar el formato de los datos
-        if (Array.isArray(data)) {
-            // Si es un array de objetos con name y stock
-            if (data.length > 0 && data[0].hasOwnProperty('name') && data[0].hasOwnProperty('stock')) {
-                labels = data.map(item => item.name);
-                values = data.map(item => item.stock);
+                return {};
             }
-            // Si es un array simple de números
-            else if (data.length > 0 && typeof data[0] === 'number') {
-                labels = data.map((_, index) => `Producto ${index + 1}`);
-                values = data;
-            }
-            // Si es un array de objetos con otras propiedades
-            else if (data.length > 0 && typeof data[0] === 'object') {
-                // Intentar encontrar propiedades comunes
-                const firstItem = data[0];
-                if (firstItem.hasOwnProperty('nombre')) {
-                    labels = data.map(item => item.nombre);
-                    values = data.map(item => item.cantidad || item.stock || 0);
-                } else {
-                    // Usar índices como labels
-                    labels = data.map((_, index) => `Producto ${index + 1}`);
-                    values = data.map(item => Object.values(item)[0] || 0);
-                }
-            }
-        }
-        // Si es un objeto con labels y data
-        else if (data && typeof data === 'object') {
-            if (data.hasOwnProperty('labels') && data.hasOwnProperty('data')) {
-                labels = data.labels;
-                values = data.data;
-            } else if (data.hasOwnProperty('labels') && data.hasOwnProperty('values')) {
-                labels = data.labels;
-                values = data.values;
-            } else {
-                // Convertir objeto a arrays
-                labels = Object.keys(data);
-                values = Object.values(data);
-            }
-        }
+        };
 
-        // Si no hay datos, mostrar mensaje
-        if (labels.length === 0 || values.length === 0) {
-            console.error('No se pudieron procesar los datos para chartReport');
-            return null;
-        }
 
-        return {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
+        const toNumber = value => {
+
+            const number = Number(value);
+
+            return Number.isFinite(number)
+                ? number
+                : 0;
+        };
+
+
+        const formatNumber = value => {
+
+            return toNumber(value)
+                .toLocaleString('es-GT');
+        };
+
+
+        const formatCurrency = value => {
+
+            return 'Q ' +
+                toNumber(value).toLocaleString(
+                    'es-GT',
                     {
-                        label: 'Stock Disponible',
-                        data: values,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
                     }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'PRODUCTOS EN STOCK',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        }
-                    },
-                    legend: {
-                        position: 'top',
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Cantidad en Stock'
-                        },
-                        ticks: {
-                            stepSize: 1
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Productos'
-                        },
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45,
-                            autoSkip: true,
-                            maxTicksLimit: 10
-                        }
-                    }
-                }
-            }
-        };
-    };
-
-    // Configuración para gráfica de stock (productos con bajo stock)
-    const chartStockConfig = (data) => {
-        if (!data.productosConMenosExistencias || !data.datosDeVentas) return null;
-
-        return {
-            type: 'bar',
-            data: {
-                labels: data.productosConMenosExistencias.map(p => p.name),
-                datasets: [
-                    {
-                        label: 'Ventas',
-                        data: data.datosDeVentas.map(v => v.total_quantity),
-                        backgroundColor: chartColors.info
-                    },
-                    {
-                        label: 'Existencias',
-                        data: data.productosConMenosExistencias.map(p => p.stock),
-                        backgroundColor: chartColors.secondary
-                    }
-                ]
-            },
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'PRODUCTOS CON STOCK MINIMO'
-                    }
-                }
-            }
-        };
-    };
-
-    // Configuración para gráfica de productos más vendidos
-    const chartProductTopConfig = (data) => {
-        if (!data.productData) return null;
-
-        return {
-            type: 'bar',
-            data: {
-                labels: data.productData.map(p => p.name),
-                datasets: [{
-                    label: 'Cantidad Vendida',
-                    data: data.productData.map(p => p.total_quantity),
-                    backgroundColor: chartColors.warning
-                }]
-            },
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'PRODUCTOS MÁS VENDIDOS'
-                    }
-                }
-            }
-        };
-    };
-
-    // Configuración para gráfica de ventas de usuarios
-    const chartTopUsersConfig = () => {
-        const userElement = document.getElementById('top-user-data');
-        if (!userElement) return null;
-
-        const userNames = userElement.getAttribute('data-user-names');
-        const salesCounts = userElement.getAttribute('data-sales-counts');
-
-        if (!userNames || !salesCounts) return null;
-
-        return {
-            type: 'bar',
-            data: {
-                labels: JSON.parse(userNames),
-                datasets: [{
-                    label: 'Ventas realizadas',
-                    data: JSON.parse(salesCounts),
-                    backgroundColor: chartColors.primary
-                }]
-            },
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'VENTAS POR USUARIO'
-                    }
-                }
-            }
-        };
-    };
-
-    // Configuración para gráfica de ingresos
-    const chartIngresosConfig = (data) => {
-        if (!data.totalMoney) return null;
-
-        return {
-            type: 'doughnut',
-            data: {
-                labels: ['Activo', 'Gastos', 'Ganancias'],
-                datasets: [{
-                    data: [
-                        data.totalMoney[1] || 0,
-                        data.totalMoney[2] || 0,
-                        data.totalMoney[0] || 0
-                    ],
-                    backgroundColor: [chartColors.success, chartColors.secondary, chartColors.primary]
-                }]
-            },
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'DISTRIBUCIÓN DE INGRESOS'
-                    }
-                }
-            }
-        };
-    };
-
-    // Función principal para inicializar todas las gráficas
-    const initializeCharts = () => {
-        // Verificar que Chart.js está cargado
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js no está cargado. Asegúrate de incluir la librería.');
-            return;
-        }
-
-        console.log('Inicializando gráficas...');
-
-        // Obtener todos los datos necesarios
-        const chartData = {
-            daysOfWeek: getSafeJsonData('daysOfWeek'),
-            salesData: getSafeJsonData('salesData'),
-            datosDeVentas: getSafeJsonData('datosDeVentas'),
-            productosConMenosExistencias: getSafeJsonData('productosConMenosExistencias'),
-            salesMonths: getSafeJsonData('salesMonths'),
-            totalMoney: getSafeJsonData('totalMoney'),
-            totalStock: getSafeJsonData('totalStock'),
-            productData: getSafeJsonData('productData'),
-            ventasTipoPago: getSafeJsonData('ventasTipoPago')
+                );
         };
 
-        console.log('Datos cargados:', chartData);
 
-        // Crear cada gráfica solo si los datos necesarios están disponibles
-        if (chartData.daysOfWeek && chartData.salesData) {
-            createChart('chartUltimosDias', chartConfigs.ultimosDias(chartData));
-        }
+        const createChart = (canvasId, config) => {
 
-        if (chartData.datosDeVentas && chartData.productosConMenosExistencias) {
-            const config = chartStockConfig(chartData);
-            if (config) createChart('chartStock', config);
-        }
+            if (!config) {
+                console.warn(
+                    `No existe configuración para ${canvasId}`
+                );
 
-        if (chartData.productData) {
-            const config = chartProductTopConfig(chartData);
-            if (config) createChart('chartProductTop', config);
-        }
-
-        // GRÁFICA 4 - PRODUCTOS EN STOCK (chartReport)
-        if (chartData.totalStock) {
-            console.log('Creando gráfica chartReport con datos:', chartData.totalStock);
-            const config = chartReportConfig(chartData.totalStock);
-            if (config) {
-                createChart('chartReport', config);
-            } else {
-                console.error('No se pudo crear la configuración para chartReport');
+                return;
             }
-        } else {
-            console.warn('No hay datos para chartReport (totalStock está vacío)');
-        }
 
-        // Configuración para ventas anuales
-        if (chartData.salesMonths && chartData.salesMonths.length > 0) {
-            createChart('chartTendenciaAnual', {
+            const canvas = document.getElementById(canvasId);
+
+            if (!canvas) {
+                console.warn(
+                    `No existe canvas #${canvasId}`
+                );
+
+                return;
+            }
+
+
+            const previousChart =
+                Chart.getChart(canvas);
+
+            if (previousChart) {
+                previousChart.destroy();
+            }
+
+
+            new Chart(canvas, config);
+        };
+
+
+        // ============================================================
+        // VENTAS RECIENTES
+        // ============================================================
+
+        const chartUltimosDiasConfig = data => {
+
+            if (!Array.isArray(data) || data.length === 0) {
+                return null;
+            }
+
+            return {
+
                 type: 'line',
+
                 data: {
-                    labels: chartData.salesMonths.map(m => m.month),
+
+                    labels: data.map(
+                        item => item.date
+                    ),
+
                     datasets: [{
-                        label: 'Ventas Mensuales',
-                        data: chartData.salesMonths.map(m => m.total),
-                        borderColor: chartColors.primary,
-                        backgroundColor: chartColors.info,
-                        fill: true
+                        label: 'Ventas',
+
+                        data: data.map(
+                            item => toNumber(item.sales)
+                        ),
+
+                        borderColor:
+                        chartColors.primary,
+
+                        backgroundColor:
+                        chartColors.primaryTransparent,
+
+                        fill: true,
+
+                        tension: 0.35,
+
+                        borderWidth: 2,
+
+                        pointRadius: 4
                     }]
                 },
+
                 options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
                     plugins: {
-                        title: {
-                            display: true,
-                            text: 'VENTAS ANUALES POR MES'
+
+                        legend: {
+                            display: false
+                        }
+                    },
+
+                    scales: {
+
+                        y: {
+                            beginAtZero: true,
+
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+
+                        x: {
+
+                            grid: {
+                                display: false
+                            }
                         }
                     }
                 }
-            });
-        }
+            };
+        };
 
-        // Gráfica de tipo de pago
-        if (chartData.ventasTipoPago && chartData.ventasTipoPago.length > 0) {
-            createChart('chartTipoPago', {
-                type: 'pie',
+
+        // ============================================================
+        // BAJO STOCK
+        // ============================================================
+
+        const chartStockConfig = data => {
+
+            if (!Array.isArray(data) || data.length === 0) {
+                return null;
+            }
+
+
+            const products = [...data]
+                .sort(
+                    (a, b) =>
+                        toNumber(a.stock) -
+                        toNumber(b.stock)
+                )
+                .slice(0, 10);
+
+
+            return {
+
+                type: 'bar',
+
                 data: {
-                    labels: chartData.ventasTipoPago.map(v => v.tipo_pago),
+
+                    labels: products.map(
+                        product => product.name
+                    ),
+
                     datasets: [{
-                        data: chartData.ventasTipoPago.map(v => v.total),
-                        backgroundColor: [chartColors.primary, chartColors.success, chartColors.warning]
+
+                        label: 'Existencias',
+
+                        data: products.map(
+                            product =>
+                                toNumber(product.stock)
+                        ),
+
+                        backgroundColor:
+                        chartColors.redTransparent,
+
+                        borderColor:
+                        chartColors.red,
+
+                        borderWidth: 1,
+
+                        borderRadius: 5
                     }]
                 },
+
                 options: {
+
+                    indexAxis: 'y',
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
                     plugins: {
-                        title: {
-                            display: true,
-                            text: 'VENTAS POR TIPO DE PAGO'
+
+                        legend: {
+                            display: false
+                        }
+                    },
+
+                    scales: {
+
+                        x: {
+
+                            beginAtZero: true,
+
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+
+                        y: {
+
+                            grid: {
+                                display: false
+                            }
                         }
                     }
                 }
-            });
+            };
+        };
+
+
+        // ============================================================
+        // PRODUCTOS MÁS VENDIDOS
+        // ============================================================
+
+        const chartProductTopConfig = data => {
+
+            if (!Array.isArray(data) || data.length === 0) {
+                return null;
+            }
+
+
+            const products = [...data]
+                .sort(
+                    (a, b) =>
+                        toNumber(b.total_quantity) -
+                        toNumber(a.total_quantity)
+                )
+                .slice(0, 10);
+
+
+            return {
+
+                type: 'bar',
+
+                data: {
+
+                    labels: products.map(
+                        product => product.name
+                    ),
+
+                    datasets: [{
+
+                        label: 'Unidades vendidas',
+
+                        data: products.map(
+                            product =>
+                                toNumber(
+                                    product.total_quantity
+                                )
+                        ),
+
+                        backgroundColor:
+                        chartColors.blueTransparent,
+
+                        borderColor:
+                        chartColors.blue,
+
+                        borderWidth: 1,
+
+                        borderRadius: 5
+                    }]
+                },
+
+                options: {
+
+                    indexAxis: 'y',
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        }
+                    },
+
+                    scales: {
+
+                        x: {
+                            beginAtZero: true,
+
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+
+                        y: {
+
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            };
+        };
+
+
+        // ============================================================
+        // VENTAS POR USUARIO
+        // ============================================================
+
+        const chartTopUsersConfig = data => {
+
+            if (!Array.isArray(data) || data.length === 0) {
+                return null;
+            }
+
+
+            const users = [...data]
+                .sort(
+                    (a, b) =>
+                        toNumber(b.sales_count) -
+                        toNumber(a.sales_count)
+                )
+                .slice(0, 10);
+
+
+            return {
+
+                type: 'bar',
+
+                data: {
+
+                    labels: users.map(
+                        user => user.user_name
+                    ),
+
+                    datasets: [{
+
+                        label: 'Ventas realizadas',
+
+                        data: users.map(
+                            user =>
+                                toNumber(user.sales_count)
+                        ),
+
+                        backgroundColor:
+                        chartColors.purpleTransparent,
+
+                        borderColor:
+                        chartColors.purple,
+
+                        borderWidth: 1,
+
+                        borderRadius: 5
+                    }]
+                },
+
+                options: {
+
+                    indexAxis: 'y',
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        }
+                    },
+
+                    scales: {
+
+                        x: {
+
+                            beginAtZero: true,
+
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+
+                        y: {
+
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            };
+        };
+
+
+        // ============================================================
+        // VENTAS ANUALES
+        // ============================================================
+
+        const chartTendenciaAnualConfig = data => {
+
+            if (!Array.isArray(data) || data.length === 0) {
+                return null;
+            }
+
+
+            return {
+
+                type: 'line',
+
+                data: {
+
+                    labels: data.map(
+                        item => item.month
+                    ),
+
+                    datasets: [{
+
+                        label: 'Ventas',
+
+                        data: data.map(
+                            item => toNumber(item.total)
+                        ),
+
+                        borderColor:
+                        chartColors.primary,
+
+                        backgroundColor:
+                        chartColors.primaryTransparent,
+
+                        borderWidth: 3,
+
+                        fill: true,
+
+                        tension: 0.35,
+
+                        pointRadius: 4
+                    }]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        }
+                    },
+
+                    scales: {
+
+                        y: {
+                            beginAtZero: true
+                        },
+
+                        x: {
+
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            };
+        };
+
+
+        // ============================================================
+        // RESUMEN FINANCIERO
+        // ============================================================
+
+        const chartIngresosConfig = data => {
+
+            if (!Array.isArray(data) || data.length === 0) {
+                return null;
+            }
+
+
+            const ganancias = toNumber(data[0]);
+            const activo = toNumber(data[1]);
+            const gastos = toNumber(data[2]);
+
+
+            return {
+
+                type: 'bar',
+
+                data: {
+
+                    labels: [
+                        'Activo',
+                        'Gastos',
+                        'Ganancias'
+                    ],
+
+                    datasets: [{
+
+                        data: [
+                            activo,
+                            gastos,
+                            ganancias
+                        ],
+
+                        backgroundColor: [
+
+                            chartColors.greenTransparent,
+
+                            chartColors.redTransparent,
+
+                            chartColors.blueTransparent
+                        ],
+
+                        borderColor: [
+
+                            chartColors.green,
+
+                            chartColors.red,
+
+                            chartColors.blue
+                        ],
+
+                        borderWidth: 1,
+
+                        borderRadius: 6
+                    }]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+                            display: false
+                        },
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                label: context =>
+                                    formatCurrency(
+                                        context.raw
+                                    )
+                            }
+                        }
+                    },
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true,
+
+                            ticks: {
+
+                                callback: value =>
+                                    'Q ' +
+                                    formatNumber(value)
+                            }
+                        },
+
+                        x: {
+
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            };
+        };
+
+
+        // ============================================================
+// ESTADOS DE PAGO
+// ============================================================
+
+        const paymentStatusNames = {
+            PAID: 'Pagado',
+            PENDING: 'Pendiente',
+            CANCELLED: 'Cancelado'
+        };
+
+        const formatPaymentStatus = estado => {
+
+            if (!estado) {
+                return 'Sin especificar';
+            }
+
+            const key = String(estado)
+                .trim()
+                .toUpperCase();
+
+            return paymentStatusNames[key] ?? estado;
+        };
+
+
+        const chartTipoPagoConfig = data => {
+
+            if (!Array.isArray(data) || data.length === 0) {
+                return null;
+            }
+
+            return {
+
+                type: 'doughnut',
+
+                data: {
+
+                    labels: data.map(
+                        item => formatPaymentStatus(
+                            item.tipo_pago
+                        )
+                    ),
+
+                    datasets: [{
+
+                        data: data.map(
+                            item => toNumber(item.total)
+                        ),
+
+                        backgroundColor: [
+                            chartColors.greenTransparent,
+                            chartColors.yellowTransparent,
+                            chartColors.redTransparent
+                        ],
+
+                        borderColor: '#ffffff',
+
+                        borderWidth: 2
+                    }]
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    cutout: '60%',
+
+                    plugins: {
+
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            };
+        };
+
+
+        // ============================================================
+        // INICIALIZACIÓN
+        // ============================================================
+
+        const initializeCharts = () => {
+
+            console.log(
+                'Inicializando dashboard...'
+            );
+
+
+            if (typeof Chart === 'undefined') {
+
+                console.error(
+                    'ERROR: Chart.js no está cargado'
+                );
+
+                return;
+            }
+
+
+            console.log(
+                'Chart.js encontrado:',
+                Chart.version
+            );
+
+
+            const data =
+                getDashboardData();
+
+
+            console.log(
+                'Datos obtenidos:',
+                data
+            );
+
+
+            createChart(
+                'chartUltimosDias',
+                chartUltimosDiasConfig(
+                    data.salesData
+                )
+            );
+
+
+            createChart(
+                'chartStock',
+                chartStockConfig(
+                    data.stockProducts
+                )
+            );
+
+
+            createChart(
+                'chartProductTop',
+                chartProductTopConfig(
+                    data.productSales
+                )
+            );
+
+
+            createChart(
+                'chartTopUsers',
+                chartTopUsersConfig(
+                    data.topUsers
+                )
+            );
+
+
+            createChart(
+                'chartTendenciaAnual',
+                chartTendenciaAnualConfig(
+                    data.salesMonths
+                )
+            );
+
+
+            createChart(
+                'chartIngresos',
+                chartIngresosConfig(
+                    data.totalMoney
+                )
+            );
+
+
+            createChart(
+                'chartTipoPago',
+                chartTipoPagoConfig(
+                    data.ventasTipoPago
+                )
+            );
+
+
+            console.log(
+                'Dashboard inicializado'
+            );
+        };
+
+
+        // ============================================================
+        // EJECUTAR
+        // ============================================================
+
+        if (document.readyState === 'loading') {
+
+            document.addEventListener(
+                'DOMContentLoaded',
+                initializeCharts
+            );
+
+        } else {
+
+            initializeCharts();
         }
 
-        // Gráfica de ingresos
-        if (chartData.totalMoney) {
-            const config = chartIngresosConfig(chartData);
-            if (config) createChart('chartIngresos', config);
-        }
 
-        // Gráfica de top usuarios
-        const topUsersConfig = chartTopUsersConfig();
-        if (topUsersConfig) createChart('chartTopUsers', topUsersConfig);
+        document.addEventListener(
+            'livewire:navigated',
+            initializeCharts
+        );
 
-        console.log('Inicialización de gráficas completada');
-    };
-
-    // Inicializar cuando el DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeCharts);
-    } else {
-        initializeCharts();
-    }
+    })();
 </script>

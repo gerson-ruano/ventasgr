@@ -30,7 +30,7 @@
                 <option value="all">Todos los Módulos</option>
                 @foreach ($this->modules as $module)
                     <option value="{{ $module->id }}">
-                        {{ $module->name }}
+                        {{ $module->name }} ({{ $module->permissions_count }})
                     </option>
                 @endforeach
             </select>

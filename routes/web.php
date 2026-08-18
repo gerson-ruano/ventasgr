@@ -72,6 +72,7 @@ Route::middleware(['auth','checkStatus'])->group(function () {
 
     //IMPRESION VENTA PDF
     Route::get('report/venta/{change}/{efectivo}/{seller}/{nextSaleNumber}/{totalTaxes}/{discount}/{customer_data}', [ExportController::class, 'reportVenta'])->name('report.venta');
+    Route::get('report/venta-termica/{change}/{efectivo}/{seller}/{nextSaleNumber}/{totalTaxes}/{discount}/{customer_data}', [ExportController::class, 'reportVentaTermica'])->name('report.venta.termica');
 
     Route::middleware(['role:Admin|Employee|Seller'])->group(function () {
         Route::get('pos', Pos::class)->name('pos');

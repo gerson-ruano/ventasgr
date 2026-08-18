@@ -706,13 +706,13 @@ class Pos extends Component
         //dd($sale);
 
         // Generar la URL del reporte
-        $url = route('report.venta', [
+        $url = route('report.venta.termica', [
             'change' => $sale->change,
             'efectivo' => $sale->cash,
             'seller' => getNameSeller($sale->seller),
             'nextSaleNumber' => $sale->id,
             'totalTaxes' => $sale->taxes,
-            'discount' => $sale->details->first()->discount,
+            optional($sale->details->first())->discount ?? 0,
             'customer_data' => urlencode(json_encode($sale->customer_data))
         ]);
 

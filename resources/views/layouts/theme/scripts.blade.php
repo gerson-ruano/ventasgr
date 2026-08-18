@@ -311,8 +311,79 @@
         }, 100);  // Espera 500 ms para asegurarse de que el PDF se ha abierto primero
     }
 
+    // ============================================================
+    // PDF TÉRMICO
+    // Ticket de 80 mm
+    // ============================================================
+
+    function openThermalPdfWindow(url) {
+
+        /*
+         * Para un ticket de 80 mm no necesitamos
+         * una ventana de 800 px.
+         */
+        var width = 340;
+        var height = 650;
+
+        var left = (screen.width - width) / 2;
+        var top = (screen.height - height) / 2;
+
+        window.open(
+            url,
+            'TicketVenta',
+            'width=' + width +
+            ',height=' + height +
+            ',top=' + top +
+            ',left=' + left +
+            ',resizable=yes' +
+            ',scrollbars=yes'
+        );
+    }
+
+
+    // ============================================================
+    // IMPRESIÓN POST-VENTA
+    // ============================================================
+
+    Livewire.on('printSale', function (event) {
+
+        /*
+         * Compatible con:
+         *
+         * $this->dispatch('printSale', url: $url);
+         *
+         * y también con la forma anterior.
+         */
+        var url =
+            event?.url ??
+            event?.[0]?.url ??
+            event;
+
+        if (!url) {
+
+            console.error(
+                'No se recibió la URL del ticket.'
+            );
+
+            Livewire.dispatch('ShowNotification');
+
+            return;
+        }
+
+
+        /*
+         * No es necesario esperar 2 segundos.
+         */
+        setTimeout(function () {
+
+            openThermalPdfWindow(url);
+
+        }, 300);
+
+    });
+
     // Manejar el evento de impresión POST-VENTA
-    Livewire.on('printSale', function (url) {
+    /*Livewire.on('printSale', function (url) {
         if (url) {
 
             var width = 800;
@@ -329,7 +400,7 @@
             Livewire.dispatch('ShowNotification');
             //alert('No se pudo generar la URL de impresión.');
         }
-    });
+    });*/
 
     // Manejar el evento de cambio de TEMA
     document.addEventListener('DOMContentLoaded', function () {

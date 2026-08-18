@@ -160,8 +160,59 @@
             <span>Detalles de Venta</span>
         </span>
             </a>
-        </div>
 
+            {{-- TICKET TÉRMICO --}}
+            {{--}}<a
+                href="#"
+                class="
+            btn
+            btn-secondary
+            w-full
+            sm:w-auto
+            border
+            dark:border-gray-500
+            hover:border-gray-500
+        "
+
+                onclick="openPdfWindow(
+            '{{ route('report.venta.termica', [
+                'change' => $change,
+                'efectivo' => $efectivo,
+                'seller' => getNameSeller($vendedorSeleccionado),
+                'nextSaleNumber' => $nextSaleNumber,
+                'totalTaxes' => $totalTaxes,
+                'discount' => $discount,
+                'customer_data' => urlencode(
+                    json_encode($customer_data)
+                )
+            ]) }}'
+        )"
+
+                @if (
+                    $tipoPago == 0 ||
+                    $efectivo < $totalPrice
+                )
+                    disabled
+                @endif
+            >
+
+        <span class="
+            flex
+            items-center
+            justify-center
+            space-x-2
+        ">
+
+            <i class="fas fa-receipt"></i>
+
+            <span>
+                Ticket
+            </span>
+
+        </span>
+
+            </a>--}}
+        </div>
     </div>
 @endif
 
