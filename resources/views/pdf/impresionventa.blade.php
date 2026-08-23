@@ -2,139 +2,230 @@
 <html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
 
     <title>
-        Venta # {{ $getNextSaleNumber }}
+        Venta #{{ $getNextSaleNumber }}
     </title>
 
     <style>
-        {!! file_get_contents(public_path('css/pdf.css')) !!}
+        {!! file_get_contents(
+            public_path('css/pdf.css')
+        ) !!}
     </style>
+
 </head>
 
-<body>
 
 @php
 
     /*
     |--------------------------------------------------------------------------
-    | DATOS GENERALES
-    |--------------------------------------------------------------------------
-    */
-
-    $descuento = (float) ($discount ?? 0);
-    $impuestos = (float) ($totalTaxes ?? 0);
-    $efectivoRecibido = (float) ($efectivo ?? 0);
-    $cambio = (float) ($change ?? 0);
-
-    /*
-    |--------------------------------------------------------------------------
-    | VALOR BRUTO
-    |--------------------------------------------------------------------------
-    */
-
-    if (isset($cart) && $cart->isNotEmpty()) {
-
-        $valorBruto = $cart->sum(function ($item) {
-            return $item->price * $item->qty;
-        });
-
-        $totalCantidad = $cart->sum('qty');
-
-    } else {
-
-        $valorBruto = $details->sum(function ($item) {
-            return $item->price * $item->quantity;
-        });
-
-        $totalCantidad = $details->sum('quantity');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | VALORES FINALES
+    | RESUMEN DE LA VENTA
     |--------------------------------------------------------------------------
     |
-    | Mantengo la lógica que ya utilizabas.
+    | Todos estos valores ya vienen calculados
+    | desde ExportController.
     |
     */
 
-    $totalFactura = $efectivoRecibido - $cambio;
+    $valorBruto =
+        (float) ($resumen['valorBruto'] ?? 0);
 
-    $subtotal = $totalFactura
-        - $descuento
-        - $impuestos;
+    $descuento =
+        (float) ($resumen['descuento'] ?? 0);
+
+    $subtotal =
+        (float) ($resumen['subtotal'] ?? 0);
+
+    $impuestos =
+        (float) ($resumen['impuestos'] ?? 0);
+
+    $totalVenta =
+        (float) ($resumen['totalVenta'] ?? 0);
+
+    $totalCantidad =
+        (float) ($resumen['totalCantidad'] ?? 0);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DATOS DE PAGO
+    |--------------------------------------------------------------------------
+    */
+
+    $efectivoRecibido =
+        (float) ($efectivo ?? 0);
+
+    $cambio =
+        (float) ($change ?? 0);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ESTADO
+    |--------------------------------------------------------------------------
+    */
+
+    $statusTranslations = [
+        'PAID' => 'PAGADO',
+        'PENDING' => 'PENDIENTE',
+        'CANCELLED' => 'ANULADO',
+    ];
+
+
+    $estadoOriginal =
+        strtoupper(
+            str_replace(
+                '"',
+                '',
+                $statusMessage ?? ''
+            )
+        );
+
+
+    $estado =
+        $statusTranslations[$estadoOriginal]
+        ?? $estadoOriginal;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FECHA DE LA VENTA
+    |--------------------------------------------------------------------------
+    */
+
+    $fechaVenta =
+        isset($sale) &&
+        $sale &&
+        !empty($sale->created_at)
+            ? \Carbon\Carbon::parse(
+                $sale->created_at
+            )
+            : \Carbon\Carbon::now();
 
 @endphp
 
 
-{{-- ============================================================= --}}
+<body>
+
+
+{{-- ================================================================ --}}
 {{-- ENCABEZADO --}}
-{{-- ============================================================= --}}
+{{-- ================================================================ --}}
 
 <table class="header-table">
 
     <tr>
 
-        {{-- LOGO / EMPRESA --}}
+        {{-- LOGO --}}
         <td class="header-logo">
 
-            @include(
-                'livewire.components.empresa_header',
-                ['empresa' => $empresa]
-            )
+            @if(!empty($empresa->imagen))
+
+                <img
+                    src="{{ $empresa->imagen }}"
+                    alt="{{ $empresa->name ?? 'Empresa' }}"
+                    class="invoice-logo">
+
+            @endif
 
         </td>
 
 
-        {{-- INFORMACIÓN DOCUMENTO --}}
+        {{-- DOCUMENTO --}}
         <td class="header-document">
 
             <div class="document-title">
                 COMPROBANTE DE VENTA
             </div>
 
+
             <div class="document-number">
-                VENTA # {{ $getNextSaleNumber }}
+
+                VENTA #
+                {{ $getNextSaleNumber }}
+
             </div>
+
 
             <div class="company-name">
-                {{ strtoupper($empresa->name ?? '') }}
-            </div>
 
-            <div class="status-text">
-
-                Estado:
-
-                <strong>
-                    {{ str_replace('"', '', $statusMessage ?? 'N/A') }}
-                </strong>
+                {{ strtoupper(
+                    $empresa->name
+                    ?? 'EMPRESA'
+                ) }}
 
             </div>
+
+
+            @if(!empty($estado))
+
+                <div>
+                    <strong>
+                        {{ $estado }}
+                    </strong>
+                </div>
+
+            @endif
 
         </td>
 
 
-        {{-- QR OPCIONAL --}}
-        <td class="header-qr">
+        {{-- DATOS EMPRESA --}}
+        <td class="header-company">
 
-            @if(isset($qrCode) && !empty($qrCode))
+            <div class="company-data">
 
-                <img
-                    src="{{ $qrCode }}"
-                    class="qr-image"
-                    alt="Código QR"
-                >
+                <strong>
+                    {{ $empresa->name ?? '' }}
+                </strong>
 
-            @else
+                <br>
 
-                <div class="qr-placeholder">
-                    DOCUMENTO<br>
-                    DE VENTA
-                </div>
+                NIT:
 
-            @endif
+                <strong>
+                    {{ $empresa->nit ?? 'N/A' }}
+                </strong>
+
+
+                <br>
+
+                Dirección:
+
+                <strong>
+                    {{ $empresa->address ?? 'N/A' }}
+                </strong>
+
+
+                @if(!empty($empresa->email))
+
+                    <br>
+
+                    Email:
+
+                    <strong>
+                        {{ $empresa->email }}
+                    </strong>
+
+                @endif
+
+
+                @if(!empty($empresa->phone))
+
+                    <br>
+
+                    Teléfono:
+
+                    <strong>
+                        {{ $empresa->phone }}
+                    </strong>
+
+                @endif
+
+            </div>
 
         </td>
 
@@ -143,87 +234,110 @@
 </table>
 
 
+{{-- ================================================================ --}}
+{{-- CLIENTE / INFORMACIÓN DE VENTA --}}
+{{-- ================================================================ --}}
 
-{{-- ============================================================= --}}
-{{-- DATOS CLIENTE + FECHAS --}}
-{{-- ============================================================= --}}
-
-<table class="general-info-table">
+<table class="general-info">
 
     <tr>
 
         {{-- CLIENTE --}}
-        <td class="customer-information">
+        <td class="customer-column">
 
             <table class="info-table">
 
                 <tr>
+
                     <td class="label">
                         Cliente:
                     </td>
 
                     <td>
+
                         <strong>
-                            {{ $customer['name'] ?? $seller ?? 'Consumidor Final' }}
+
+                            {{ $customer['name']
+                                ?? 'Consumidor Final'
+                            }}
+
                         </strong>
+
                     </td>
+
                 </tr>
 
 
                 <tr>
+
                     <td class="label">
                         NIT:
                     </td>
 
                     <td>
-                        {{ $customer['nit'] ?? 'CF' }}
+
+                        {{ $customer['nit']
+                            ?? 'CF'
+                        }}
+
                     </td>
+
                 </tr>
 
 
-                <tr>
-                    <td class="label">
-                        Dirección:
-                    </td>
-
-                    <td>
-                        {{ $customer['address'] ?? 'N/A' }}
-                    </td>
-                </tr>
-
-
-                <tr>
-                    <td class="label">
-                        Departamento:
-                    </td>
-
-                    <td>
-                        {{ $customer['departamento_nombre'] ?? 'N/A' }}
-                    </td>
-                </tr>
-
-
-                <tr>
-                    <td class="label">
-                        Municipio:
-                    </td>
-
-                    <td>
-                        {{ $customer['municipio_nombre'] ?? 'N/A' }}
-                    </td>
-                </tr>
-
-
-                @if(!empty($customer['email'] ?? null))
+                @if(!empty(
+                    $customer['address']
+                    ?? null
+                ))
 
                     <tr>
 
                         <td class="label">
-                            Correo:
+                            Dirección:
                         </td>
 
                         <td>
-                            {{ $customer['email'] }}
+                            {{ $customer['address'] }}
+                        </td>
+
+                    </tr>
+
+                @endif
+
+
+                @if(!empty(
+                    $customer['departamento_nombre']
+                    ?? null
+                ))
+
+                    <tr>
+
+                        <td class="label">
+                            Departamento:
+                        </td>
+
+                        <td>
+                            {{ $customer['departamento_nombre'] }}
+                        </td>
+
+                    </tr>
+
+                @endif
+
+
+                @if(!empty(
+                    $customer['municipio_nombre']
+                    ?? null
+                ))
+
+                    <tr>
+
+                        <td class="label">
+                            Municipio:
+                        </td>
+
+                        <td>
+                            {{ $customer['municipio_nombre'] }}
                         </td>
 
                     </tr>
@@ -235,8 +349,8 @@
         </td>
 
 
-        {{-- FECHAS --}}
-        <td class="date-information">
+        {{-- DATOS DE VENTA --}}
+        <td class="document-column">
 
             <table class="info-table">
 
@@ -247,7 +361,11 @@
                     </td>
 
                     <td>
-                        {{ \Carbon\Carbon::now()->format('d-m-Y') }}
+
+                        {{ $fechaVenta->format(
+                            'd-m-Y'
+                        ) }}
+
                     </td>
 
                 </tr>
@@ -260,7 +378,11 @@
                     </td>
 
                     <td>
-                        {{ \Carbon\Carbon::now()->format('H:i:s') }}
+
+                        {{ $fechaVenta->format(
+                            'H:i:s'
+                        ) }}
+
                     </td>
 
                 </tr>
@@ -273,10 +395,52 @@
                     </td>
 
                     <td>
-                        {{ $usuario->name ?? $seller ?? 'N/A' }}
+
+                        {{ $seller
+                            ?? $usuario->name
+                            ?? 'N/A'
+                        }}
+
                     </td>
 
                 </tr>
+
+
+                <tr>
+
+                    <td class="label">
+                        Método:
+                    </td>
+
+                    <td>
+
+                        {{ $metodoPago
+                            ?? 'N/A'
+                        }}
+
+                    </td>
+
+                </tr>
+
+
+                @if(!empty(
+                    $customer['ref_page']
+                    ?? null
+                ))
+
+                    <tr>
+
+                        <td class="label">
+                            Referencia:
+                        </td>
+
+                        <td>
+                            {{ $customer['ref_page'] }}
+                        </td>
+
+                    </tr>
+
+                @endif
 
             </table>
 
@@ -287,12 +451,11 @@
 </table>
 
 
-
-{{-- ============================================================= --}}
+{{-- ================================================================ --}}
 {{-- PRODUCTOS --}}
-{{-- ============================================================= --}}
+{{-- ================================================================ --}}
 
-<table class="products-table">
+<table class="table-factus">
 
     <thead>
 
@@ -302,23 +465,27 @@
             #
         </th>
 
-        <th width="31%">
+        <th width="11%">
+            Código
+        </th>
+
+        <th width="28%">
             Descripción
         </th>
 
-        <th width="15%">
-            Val. Unit.
-        </th>
-
         <th width="10%">
-            Cantidad
-        </th>
-
-        <th width="13%">
-            Descuento
+            Cant.
         </th>
 
         <th width="14%">
+            Val. Unit.
+        </th>
+
+        <th width="16%">
+            Descuento
+        </th>
+
+        <th width="16%">
             Total
         </th>
 
@@ -329,138 +496,138 @@
 
     <tbody>
 
-    @if(isset($cart) && $cart->isNotEmpty())
+    @forelse($lineas as $linea)
+
+        <tr>
+
+            {{-- NÚMERO --}}
+            <td class="text-center">
+
+                {{ $loop->iteration }}
+
+            </td>
 
 
-        @foreach($cart as $item)
+            {{-- CÓDIGO --}}
+            <td class="text-center">
 
-            @php
+                {{ $linea['codigo'] }}
 
-                $cantidad = (float) $item->qty;
-                $precio = (float) $item->price;
-
-                $totalProducto =
-                    $precio * $cantidad;
-
-            @endphp
-
-            <tr>
-
-                <td class="center">
-                    {{ $loop->iteration }}
-                </td>
+            </td>
 
 
-                <td>
-                    {{ $item->name }}
-                </td>
+            {{-- PRODUCTO --}}
+            <td>
+
+                {{ $linea['nombre'] }}
+
+            </td>
 
 
-                <td class="money">
-                    {{ $currency }}.
-                    {{ number_format($precio, 2) }}
-                </td>
+            {{-- CANTIDAD --}}
+            <td class="text-center">
+
+                {{ number_format(
+                    $linea['cantidad'],
+                    2
+                ) }}
+
+            </td>
 
 
-                <td class="center">
-                    {{ number_format($cantidad, 2) }}
-                </td>
+            {{-- PRECIO UNITARIO --}}
+            <td class="money">
+
+                {{ $currency }}.
+                {{ number_format(
+                    $linea['precio'],
+                    2
+                ) }}
+
+            </td>
 
 
-                <td class="money">
-                    {{ $currency }}.
-                    0.00
-                </td>
+            {{-- DESCUENTO --}}
+            <td class="money">
+
+                @if($linea['descuento'] > 0)
+
+                    - {{ $currency }}.
+                    {{ number_format(
+                        $linea['descuento'],
+                        2
+                    ) }}
+
+                    <br>
+
+                    <small>
+
+                        {{ number_format(
+                            $linea['porcentaje_descuento'],
+                            2
+                        ) }}%
+
+                    </small>
+
+                @else
+
+                    {{ $currency }}. 0.00
+
+                @endif
+
+            </td>
 
 
-                <td class="money">
-                    {{ $currency }}.
-                    {{ number_format($totalProducto, 2) }}
-                </td>
+            {{-- TOTAL DESPUÉS DE DESCUENTO --}}
+            <td class="money">
 
-            </tr>
+                {{ $currency }}.
+                {{ number_format(
+                    $linea['total'],
+                    2
+                ) }}
 
-        @endforeach
+            </td>
 
-
-    @else
-
-
-        @foreach($details as $d)
-
-            @php
-
-                $cantidad = (float) $d->quantity;
-                $precio = (float) $d->price;
-
-                $totalProducto =
-                    $precio * $cantidad;
-
-            @endphp
+        </tr>
 
 
-            <tr>
+    @empty
 
-                <td class="center">
-                    {{ $loop->iteration }}
-                </td>
+        <tr>
 
+            <td
+                colspan="7"
+                class="text-center"
+                style="padding: 20px;"
+            >
 
-                <td class="center">
-                    {{ $d->product->id ?? '-' }}
-                </td>
+                No existen productos registrados
+                para esta venta.
 
+            </td>
 
-                <td>
-                    {{ $d->product->name }}
-                </td>
+        </tr>
 
-
-                <td class="money">
-                    {{ $currency }}.
-                    {{ number_format($precio, 2) }}
-                </td>
-
-
-                <td class="center">
-                    {{ number_format($cantidad, 2) }}
-                </td>
-
-
-                <td class="money">
-                    {{ $currency }}.
-                    0.00
-                </td>
-
-
-                <td class="money">
-                    {{ $currency }}.
-                    {{ number_format($totalProducto, 2) }}
-                </td>
-
-            </tr>
-
-        @endforeach
-
-    @endif
+    @endforelse
 
     </tbody>
 
 </table>
 
 
-
-{{-- ============================================================= --}}
+{{-- ================================================================ --}}
 {{-- OBSERVACIONES + TOTALES --}}
-{{-- ============================================================= --}}
+{{-- ================================================================ --}}
 
 <table class="summary-table">
 
     <tr>
 
         <th class="observations-title">
-            Observaciones
+            Información de la venta
         </th>
+
 
         <th class="totals-title">
             Totales
@@ -471,35 +638,63 @@
 
     <tr>
 
-        {{-- OBSERVACIONES --}}
+        {{-- INFORMACIÓN --}}
         <td class="observations-cell">
 
-            @if(!empty($customer['ref_page'] ?? null))
-
-                <strong>
-                    Referencia de pago:
-                </strong>
-
-                {{ $customer['ref_page'] }}
-
-                <br><br>
-
-            @endif
-
-
-            Venta realizada por:
+            Venta:
 
             <strong>
-                {{ $usuario->name ?? $seller ?? 'N/A' }}
+                #{{ $getNextSaleNumber }}
             </strong>
 
+
             <br><br>
+
 
             Estado:
 
             <strong>
-                {{ str_replace('"', '', $statusMessage ?? 'N/A') }}
+                {{ $estado ?: 'N/A' }}
             </strong>
+
+
+            <br><br>
+
+
+            Registrada por:
+
+            <strong>
+                {{ $usuario->name ?? 'N/A' }}
+            </strong>
+
+
+            @if(!empty($seller))
+
+                <br><br>
+
+                Vendedor:
+
+                <strong>
+                    {{ $seller }}
+                </strong>
+
+            @endif
+
+
+            @if(!empty(
+                $customer['ref_page']
+                ?? null
+            ))
+
+                <br><br>
+
+                Referencia:
+
+                <strong>
+                    {{ $customer['ref_page'] }}
+                </strong>
+
+            @endif
 
         </td>
 
@@ -509,74 +704,124 @@
 
             <table class="totals-inner">
 
+                {{-- VALOR BRUTO --}}
                 <tr>
+
                     <td>
                         Valor bruto
                     </td>
 
                     <td class="money">
+
                         {{ $currency }}.
-                        {{ number_format($valorBruto, 2) }}
+                        {{ number_format(
+                            $valorBruto,
+                            2
+                        ) }}
+
                     </td>
+
                 </tr>
 
 
+                {{-- DESCUENTO --}}
+                @if($descuento > 0)
+
+                    <tr>
+
+                        <td>
+                            Descuento (-)
+                        </td>
+
+                        <td class="money">
+
+                            - {{ $currency }}.
+                            {{ number_format(
+                                $descuento,
+                                2
+                            ) }}
+
+                        </td>
+
+                    </tr>
+
+                @endif
+
+
+                {{-- SUBTOTAL SIN IVA --}}
                 <tr>
+
                     <td>
-                        Base imponible
+                        Subtotal sin IVA
                     </td>
 
                     <td class="money">
+
                         {{ $currency }}.
-                        {{ number_format($subtotal, 2) }}
+                        {{ number_format(
+                            $subtotal,
+                            2
+                        ) }}
+
                     </td>
+
                 </tr>
 
 
+                {{-- IVA --}}
                 <tr>
+
                     <td>
-                        Impuestos
+                        IVA
                     </td>
 
                     <td class="money">
+
                         {{ $currency }}.
-                        {{ number_format($impuestos, 2) }}
+                        {{ number_format(
+                            $impuestos,
+                            2
+                        ) }}
+
                     </td>
+
                 </tr>
 
 
+                {{-- CANTIDAD --}}
                 <tr>
+
                     <td>
-                        Descuento (-)
+                        Cantidad
                     </td>
 
                     <td class="money">
-                        {{ $currency }}.
-                        {{ number_format($descuento, 2) }}
+
+                        {{ number_format(
+                            $totalCantidad,
+                            2
+                        ) }}
+
                     </td>
+
                 </tr>
 
 
-                <tr>
+                {{-- TOTAL FINAL --}}
+                <tr class="grand-total">
+
                     <td>
-                        Recargo (+)
+                        Total venta
                     </td>
 
                     <td class="money">
-                        {{ $currency }}. 0.00
-                    </td>
-                </tr>
 
-
-                <tr class="total-final">
-
-                    <td>
-                        Total factura
-                    </td>
-
-                    <td class="money">
                         {{ $currency }}.
-                        {{ number_format($totalFactura, 2) }}
+                        {{ number_format(
+                            $totalVenta,
+                            2
+                        ) }}
+
                     </td>
 
                 </tr>
@@ -590,10 +835,9 @@
 </table>
 
 
-
-{{-- ============================================================= --}}
-{{-- INFORMACIÓN DE OPERACIÓN Y PAGO --}}
-{{-- ============================================================= --}}
+{{-- ================================================================ --}}
+{{-- PAGO --}}
+{{-- ================================================================ --}}
 
 <table class="payment-section">
 
@@ -602,8 +846,13 @@
         {{-- OPERACIÓN --}}
         <td class="operation-column">
 
-            <div class="section-label">
+            <div class="section-title">
                 Tipo de operación
+            </div>
+
+
+            <div class="section-label">
+                Operación:
             </div>
 
             <div class="section-value">
@@ -611,15 +860,26 @@
             </div>
 
 
-            <br>
-
-
             <div class="section-label">
-                Cantidad de productos
+                Estado:
             </div>
 
             <div class="section-value">
-                {{ number_format($totalCantidad, 2) }}
+                {{ $estado ?: 'N/A' }}
+            </div>
+
+
+            <div class="section-label">
+                Productos vendidos:
+            </div>
+
+            <div class="section-value">
+
+                {{ number_format(
+                    $totalCantidad,
+                    2
+                ) }}
+
             </div>
 
         </td>
@@ -628,63 +888,65 @@
         {{-- PAGO --}}
         <td class="payment-column">
 
-            <div class="section-label">
+            <div class="section-title">
                 Detalles de Pago
             </div>
 
-            <div class="payment-line"></div>
 
-
-            <div class="small-label">
+            <div class="section-label">
                 Forma de pago:
             </div>
 
             <div class="section-value">
-                {{ $metodoPago ?? 'N/A' }}
+
+                {{ $metodoPago
+                    ?? 'N/A'
+                }}
+
             </div>
 
 
-            <br>
-
-
-            <div class="small-label">
+            <div class="section-label">
                 Efectivo recibido:
             </div>
 
             <div class="section-value">
 
                 {{ $currency }}.
-                {{ number_format($efectivoRecibido, 2) }}
+                {{ number_format(
+                    $efectivoRecibido,
+                    2
+                ) }}
 
             </div>
 
 
-            <br>
-
-
-            <div class="small-label">
+            <div class="section-label">
                 Cambio:
             </div>
 
             <div class="section-value">
 
                 {{ $currency }}.
-                {{ number_format($cambio, 2) }}
+                {{ number_format(
+                    $cambio,
+                    2
+                ) }}
 
             </div>
 
 
-            <br>
-
-
-            <div class="small-label">
+            <div class="section-label">
                 Monto:
             </div>
 
             <div class="payment-total">
 
                 {{ $currency }}.
-                {{ number_format($totalFactura, 2) }}
+                {{ number_format(
+                    $totalVenta,
+                    2
+                ) }}
 
             </div>
 
@@ -695,41 +957,13 @@
 </table>
 
 
-
-{{-- ============================================================= --}}
-{{-- REFERENCIA DEL DOCUMENTO --}}
-{{-- ============================================================= --}}
-
-<div class="document-reference">
-
-    <strong>
-        Documento generado por el sistema
-        {{ $empresa->name ?? '' }}
-    </strong>
-
-    <br>
-
-    Venta # {{ $getNextSaleNumber }}
-
-    @if(!empty($customer['ref_page'] ?? null))
-
-        |
-        Referencia:
-        {{ $customer['ref_page'] }}
-
-    @endif
-
-</div>
-
-
-
-{{-- ============================================================= --}}
-{{-- PIE --}}
-{{-- ============================================================= --}}
+{{-- ================================================================ --}}
+{{-- FOOTER --}}
+{{-- ================================================================ --}}
 
 <section class="footer">
 
-    <table width="100%">
+    <table>
 
         <tr>
 
@@ -743,7 +977,7 @@
 
             <td
                 width="34%"
-                class="center"
+                class="text-center"
             >
 
                 Comprobante de Venta
@@ -753,7 +987,7 @@
 
             <td
                 width="33%"
-                class="right"
+                class="text-right"
             >
 
                 Página

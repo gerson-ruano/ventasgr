@@ -23,6 +23,7 @@
                     <th>Descripción</th>
                     <th>Categoria</th>
                     <th>Precio</th>
+                    <th>Descuento</th>
                     <th>Stock</th>
                     <th>Inv Minimo</th>
                     <th>Imagen</th>
@@ -37,7 +38,7 @@
                     <td>{{ $product->name }}</td>
                     <td>{{ $product->category->name }}</td>
                     <td>{{ $product->price }}</td>
-                    {{--}}<td class="py-2 px-4 text-left">{{ $product->stock }}</td>--}}
+                    <td>{{ $product->discount }}</td>
                     <td><span
                             class="badge {{ $product->stock >= $product->alerts ? 'badge-success' : 'badge-warning'}} text-uppercase">{{ $product->stock }}</span>
                     </td>
@@ -76,6 +77,7 @@
                     <th>Descripción</th>
                     <th>Categoria</th>
                     <th>Precio</th>
+                    <th>Descuento</th>
                     <th>Stock</th>
                     <th>Inv Minimo</th>
                     <th>Imagen</th>

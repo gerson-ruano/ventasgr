@@ -9,7 +9,7 @@
         Venta #{{ $getNextSaleNumber }}
     </title>
 
-    {{-- CSS común para todos los PDF estilo Factus --}}
+    {{-- CSS común para PDF estilo Factus --}}
     <style>
         {!! file_get_contents(public_path('css/pdf.css')) !!}
     </style>
@@ -57,34 +57,36 @@
     |--------------------------------------------------------------------------
     | TOTALES
     |--------------------------------------------------------------------------
+    |
+    | Todos estos datos ya vienen calculados
+    | desde ExportController.
+    |
     */
 
-    $totalCantidad =
-        $details->sum('quantity');
-
-
     $valorBruto =
-        $details->sum(function ($detail) {
-
-            return
-                $detail->price *
-                $detail->quantity;
-        });
-
+        $resumen['valorBruto'];
 
     $descuento =
-        (float) (
-            $sale->details->first()->discount
-            ?? 0
-        );
+        $resumen['descuento'];
 
+    $subtotal =
+        $resumen['subtotal'];
 
     $impuestos =
-        (float) (
-            $sale->taxes
-            ?? 0
-        );
+        $resumen['impuestos'];
 
+    $totalVenta =
+        $resumen['totalVenta'];
+
+    $totalCantidad =
+        $resumen['totalCantidad'];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DATOS DE PAGO
+    |--------------------------------------------------------------------------
+    */
 
     $efectivo =
         (float) (
@@ -98,24 +100,6 @@
             $sale->change
             ?? 0
         );
-
-
-    /*
-     * Mantiene la misma lógica
-     * que tu vista anterior.
-     */
-    $subtotal =
-        ($efectivo - $cambio)
-        - $descuento
-        - $impuestos;
-
-
-    /*
-     * Total real cobrado.
-     */
-    $totalVenta =
-        $efectivo -
-        $cambio;
 
 @endphp
 
@@ -152,30 +136,22 @@
         <td class="header-document">
 
             <div class="document-title">
-
                 COMPROBANTE DE VENTA
-
             </div>
 
 
             <div class="document-number">
-
                 VENTA # {{ $getNextSaleNumber }}
-
             </div>
 
 
             <div class="company-name">
-
                 {{ strtoupper($empresa->name) }}
-
             </div>
 
 
             <span class="status {{ $statusClass }}">
-
                 {{ $statusText }}
-
             </span>
 
         </td>
@@ -192,7 +168,6 @@
 
                 <br>
 
-
                 NIT:
 
                 <strong>
@@ -200,7 +175,6 @@
                 </strong>
 
                 <br>
-
 
                 Dirección:
 
@@ -210,7 +184,6 @@
 
                 <br>
 
-
                 Email:
 
                 <strong>
@@ -218,7 +191,6 @@
                 </strong>
 
                 <br>
-
 
                 Teléfono:
 
@@ -277,9 +249,7 @@
                         </td>
 
                         <td>
-
                             {{ $customer['nit'] ?? 'CF' }}
-
                         </td>
 
                     </tr>
@@ -292,9 +262,7 @@
                         </td>
 
                         <td>
-
                             {{ $customer['address'] ?? 'N/A' }}
-
                         </td>
 
                     </tr>
@@ -307,9 +275,7 @@
                         </td>
 
                         <td>
-
                             {{ $customer['departamento_nombre'] ?? 'N/A' }}
-
                         </td>
 
                     </tr>
@@ -322,9 +288,7 @@
                         </td>
 
                         <td>
-
                             {{ $customer['municipio_nombre'] ?? 'N/A' }}
-
                         </td>
 
                     </tr>
@@ -355,9 +319,7 @@
                         </td>
 
                         <td>
-
                             Consumidor Final
-
                         </td>
 
                     </tr>
@@ -379,9 +341,7 @@
                 <tr>
 
                     <td class="label">
-
                         Fecha:
-
                     </td>
 
                     <td>
@@ -398,9 +358,7 @@
                 <tr>
 
                     <td class="label">
-
                         Hora:
-
                     </td>
 
                     <td>
@@ -417,15 +375,11 @@
                 <tr>
 
                     <td class="label">
-
                         Método:
-
                     </td>
 
                     <td>
-
                         {{ $metodoPago ?? 'N/A' }}
-
                     </td>
 
                 </tr>
@@ -436,15 +390,11 @@
                     <tr>
 
                         <td class="label">
-
                             Referencia:
-
                         </td>
 
                         <td>
-
                             {{ $customer['ref_page'] }}
-
                         </td>
 
                     </tr>
@@ -472,27 +422,31 @@
 
     <tr>
 
-        <th width="6%">
+        <th width="5%">
             #
         </th>
 
-        <th width="13%">
+        <th width="11%">
             Código
         </th>
 
-        <th width="35%">
+        <th width="28%">
             Descripción
         </th>
 
-        <th width="13%">
-            Cantidad
+        <th width="10%">
+            Cant.
         </th>
 
-        <th width="16%">
+        <th width="14%">
             Val. Unit.
         </th>
 
-        <th width="17%">
+        <th width="16%">
+            Descuento
+        </th>
+
+        <th width="16%">
             Total
         </th>
 
@@ -504,11 +458,20 @@
     <tbody>
 
 
-    @forelse($details as $d)
+    @forelse($lineas as $linea)
+
+        @php
+            /*
+             * El objeto original SaleDetail.
+             */
+            $d = $linea['detail'];
+        @endphp
+
 
         <tr>
 
 
+            {{-- NÚMERO --}}
             <td class="text-center">
 
                 {{ $loop->iteration }}
@@ -516,6 +479,7 @@
             </td>
 
 
+            {{-- CÓDIGO --}}
             <td class="text-center">
 
                 {{ $d->product->barcode ?? '-' }}
@@ -523,13 +487,15 @@
             </td>
 
 
+            {{-- PRODUCTO --}}
             <td>
 
-                {{ $d->product->name }}
+                {{ $d->product->name ?? 'Producto' }}
 
             </td>
 
 
+            {{-- CANTIDAD --}}
             <td class="text-center">
 
                 {{ number_format(
@@ -540,6 +506,7 @@
             </td>
 
 
+            {{-- VALOR UNITARIO --}}
             <td class="money">
 
                 {{ $currency }}.
@@ -551,12 +518,43 @@
             </td>
 
 
+            {{-- DESCUENTO --}}
+            <td class="money">
+
+                @if($linea['descuento'] > 0)
+
+                    - {{ $currency }}.
+                    {{ number_format(
+                        $linea['descuento'],
+                        2
+                    ) }}
+
+                    <br>
+
+                    <small>
+
+                        {{ number_format(
+                            $linea['porcentaje_descuento'],
+                            2
+                        ) }}%
+
+                    </small>
+
+                @else
+
+                    {{ $currency }}. 0.00
+
+                @endif
+
+            </td>
+
+
+            {{-- TOTAL DESPUÉS DE DESCUENTO --}}
             <td class="money">
 
                 {{ $currency }}.
                 {{ number_format(
-                    $d->price *
-                    $d->quantity,
+                    $linea['total'],
                     2
                 ) }}
 
@@ -570,7 +568,7 @@
         <tr>
 
             <td
-                colspan="6"
+                colspan="7"
                 class="text-center"
                 style="padding: 20px;"
             >
@@ -600,16 +598,12 @@
 
 
         <th class="observations-title">
-
             Observaciones
-
         </th>
 
 
         <th class="totals-title">
-
             Totales
-
         </th>
 
 
@@ -644,7 +638,6 @@
 
                 <br><br>
 
-
                 Vendedor:
 
                 <strong>
@@ -658,7 +651,6 @@
 
                 <br><br>
 
-
                 Referencia de pago:
 
                 <strong>
@@ -671,7 +663,6 @@
             @if($sale->created_at != $sale->updated_at)
 
                 <br><br>
-
 
                 Última modificación:
 
@@ -696,12 +687,11 @@
             <table class="totals-inner">
 
 
+                {{-- VALOR BRUTO --}}
                 <tr>
 
                     <td>
-
                         Valor bruto
-
                     </td>
 
 
@@ -718,12 +708,36 @@
                 </tr>
 
 
+                {{-- DESCUENTO --}}
+                @if($descuento > 0)
+
+                    <tr>
+
+                        <td>
+                            Descuento (-)
+                        </td>
+
+
+                        <td class="money">
+
+                            - {{ $currency }}.
+                            {{ number_format(
+                                $descuento,
+                                2
+                            ) }}
+
+                        </td>
+
+                    </tr>
+
+                @endif
+
+
+                {{-- SUBTOTAL SIN IVA --}}
                 <tr>
 
                     <td>
-
-                        Subtotal
-
+                        Subtotal sin IVA
                     </td>
 
 
@@ -740,12 +754,11 @@
                 </tr>
 
 
+                {{-- IVA --}}
                 <tr>
 
                     <td>
-
                         IVA
-
                     </td>
 
 
@@ -762,34 +775,11 @@
                 </tr>
 
 
+                {{-- CANTIDAD --}}
                 <tr>
 
                     <td>
-
-                        Descuento (-)
-
-                    </td>
-
-
-                    <td class="money">
-
-                        {{ $currency }}.
-                        {{ number_format(
-                            $descuento,
-                            2
-                        ) }}
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-
                         Cantidad
-
                     </td>
 
 
@@ -805,12 +795,11 @@
                 </tr>
 
 
+                {{-- TOTAL --}}
                 <tr class="grand-total">
 
                     <td>
-
                         Total venta
-
                     </td>
 
 
@@ -852,44 +841,32 @@
 
 
             <div class="section-title">
-
                 Tipo de operación
-
             </div>
 
 
             <div class="section-label">
-
                 Operación:
-
             </div>
 
 
             <div class="section-value">
-
                 Venta
-
             </div>
 
 
             <div class="section-label">
-
                 Estado:
-
             </div>
 
 
             <div class="section-value">
-
                 {{ $statusText }}
-
             </div>
 
 
             <div class="section-label">
-
                 Productos vendidos:
-
             </div>
 
 
@@ -911,30 +888,22 @@
 
 
             <div class="section-title">
-
                 Detalles de Pago
-
             </div>
 
 
             <div class="section-label">
-
                 Forma de pago:
-
             </div>
 
 
             <div class="section-value">
-
                 {{ $metodoPago ?? 'N/A' }}
-
             </div>
 
 
             <div class="section-label">
-
                 Efectivo recibido:
-
             </div>
 
 
@@ -950,9 +919,7 @@
 
 
             <div class="section-label">
-
                 Cambio:
-
             </div>
 
 
@@ -968,9 +935,7 @@
 
 
             <div class="section-label">
-
                 Monto:
-
             </div>
 
 
@@ -1003,23 +968,17 @@
 
 
         <td class="label">
-
             Usuario:
-
         </td>
 
 
         <td>
-
             {{ $usuario->name }}
-
         </td>
 
 
         <td class="label">
-
             Fecha de ingreso:
-
         </td>
 
 
@@ -1039,9 +998,7 @@
 
 
         <td class="label">
-
             Fecha de consulta:
-
         </td>
 
 
@@ -1054,9 +1011,7 @@
 
 
         <td class="label">
-
             Modificado:
-
         </td>
 
 
@@ -1101,13 +1056,8 @@
             </td>
 
 
-            <td
-                width="34%"
-                class="text-center"
-            >
-
+            <td width="34%" class="text-center">
                 Comprobante de Venta
-
             </td>
 
 
@@ -1117,7 +1067,6 @@
             >
 
                 Página
-
                 <span class="pagenum"></span>
 
             </td>

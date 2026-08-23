@@ -50,7 +50,6 @@
                     @error('alerts') <span class="text-red-500 text-sm">{{ $message }}</span>@enderror
                 </div>
 
-
                 <div class="mb-4">
                     <div class="flex flex-col items-stretch mb-2 mr-2 ml-2 w-full">
                         @include('livewire.components.select_filtro', [
@@ -61,6 +60,13 @@
                                             'valores' => $categories
                                         ])
                     </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="category_discount" class="block text-sm font-medium text-gray-700">Descuento</label>
+                    <input id="category_discount" type="number" placeholder="Ej. 0"
+                           class="input input-bordered input-info mt-1 w-full" wire:model.blur="discount" />
+                    @error('discount') <span class="text-red-500 text-sm">{{ $message }}</span>@enderror
                 </div>
 
                 <div class="mb-4">

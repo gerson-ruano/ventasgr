@@ -18,7 +18,7 @@ class Products extends Component
     use WithFileUploads;
     use WithPagination;
 
-    public $name, $barcode, $cost, $price, $stock, $alerts, $categoryid, $search, $image, $imageUrl, $selected_id, $pageTitle, $componentName;
+    public $name, $barcode, $cost, $price, $stock, $alerts, $categoryid, $search, $image, $discount, $imageUrl, $selected_id, $pageTitle, $componentName;
     public $isAddStockOpen = false;
     public $stockToAdd = 0;
     public $productSelectedStock;
@@ -32,6 +32,7 @@ class Products extends Component
         'price' => 'required|numeric|min:0',
         'stock' => 'nullable|numeric|min:0',
         'alerts' => 'required|numeric|min:0',
+        'discount' => 'nullable|numeric|min:0|max:100',
         'categoryid' => 'required|not_in:Elegir|exists:categories,id'
     ];
 
@@ -43,6 +44,7 @@ class Products extends Component
         'barcode.unique' => 'Ya existe un producto con este código de barras',
         'price.required' => 'El precio es requerido',
         'cost.required' => 'El costo es requerido',
+        'discount.numeric' => 'El descuento debe ser un número.',
         //'stock.required' => 'El stock es requerido',
         'alerts.required' => 'Ingresa el valor minimo de existencia',
         'categoryid.required' => 'Elige una categoria',
@@ -98,6 +100,7 @@ class Products extends Component
         $this->selected_id = $id;
         $this->productSelectedStock = $product->stock;
         $this->stockToAdd = 0;
+        $this->name = $product->name;
 
         $this->isAddStockOpen = true;
     }
@@ -165,7 +168,7 @@ class Products extends Component
 
     public function edit($id)
     {
-        $product = Product::find($id, ['id', 'name', 'barcode', 'cost', 'price', 'stock', 'alerts', 'category_id', 'image']);
+        $product = Product::find($id, ['id', 'name', 'barcode', 'cost', 'price', 'stock', 'alerts', 'discount', 'category_id', 'image']);
         $this->name = $product->name;
         $this->selected_id = $product->id;
         $this->barcode = $product->barcode;
@@ -173,6 +176,7 @@ class Products extends Component
         $this->price = $product->price;
         $this->stock = $product->stock;
         $this->alerts = $product->alerts;
+        $this->discount = $product->discount ?? 0;
         $this->categoryid = $product->category_id;
         $this->imageUrl = $product->image ? Storage::url('products/' . $product->image) : null;
         $this->image = null;
@@ -200,6 +204,7 @@ class Products extends Component
                 'barcode' => $this->barcode,
                 'stock' => $this->stock,
                 'alerts' => $this->alerts,
+                $this->discount = $product->discount ?? 0,
                 'category_id' => $this->categoryid,
 
             ]);
@@ -250,6 +255,7 @@ class Products extends Component
         $this->price = '';
         $this->stock = '';
         $this->alerts = '';
+        $this->discount = 0;
         $this->imageUrl = null;
         $this->search = '';
         $this->categoryid = 'Elegir';

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Models\Sale;
+use App\Models\Product;
 use App\Models\Company;
 use Dompdf\Options;
 use App\Exports\SaleExport;
@@ -37,78 +38,386 @@ class ExportController extends Controller
     // REPORTE DE VENTAS GENERAL
     public function reportPDF($userId, $reportType, $dateFrom = null, $dateTo = null, $selectTipoEstado = null)
     {
-        $data = [];
+        /*
+    |--------------------------------------------------------------------------
+    | RANGO DE FECHAS
+    |--------------------------------------------------------------------------
+    */
 
-        if ($reportType == 0)  //VENTAS DEL DIA
-        {
-            $from = Carbon::parse(Carbon::now())->format('Y-m-d') . ' 00:00:00';
-            $to = Carbon::parse(Carbon::now())->format('Y-m-d') . ' 23:59:59';
+        if ($reportType == 0) {
+
+            /*
+             * Ventas del día.
+             */
+            $from =
+                Carbon::now()
+                    ->startOfDay();
+
+
+            $to =
+                Carbon::now()
+                    ->endOfDay();
 
         } else {
-            $from = Carbon::parse($dateFrom)->format('Y-m-d') . ' 00:00:00';
-            $to = Carbon::parse($dateTo)->format('Y-m-d') . ' 23:59:59';
+
+            /*
+             * Ventas por rango.
+             */
+            $from =
+                Carbon::parse(
+                    $dateFrom
+                )->startOfDay();
+
+
+            $to =
+                Carbon::parse(
+                    $dateTo
+                )->endOfDay();
         }
 
-        // Construir la consulta de ventas con el filtro de tipo de pago
-        $query = Sale::join('users as u', 'u.id', 'sales.user_id')
-            ->select('sales.*', 'u.name as user')
-            ->whereBetween('sales.created_at', [$from, $to]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | CONSULTA
+        |--------------------------------------------------------------------------
+        |
+        | Cargamos también details.product para reutilizar
+        | nuestra lógica común de descuentos.
+        |
+        */
+
+        $query =
+            Sale::with([
+                'details.product'
+            ])
+                ->join(
+                    'users as u',
+                    'u.id',
+                    '=',
+                    'sales.user_id'
+                )
+                ->select(
+                    'sales.*',
+                    'u.name as user'
+                )
+                ->whereBetween(
+                    'sales.created_at',
+                    [
+                        $from,
+                        $to
+                    ]
+                );
+
+
+        /*
+         * Usuario específico.
+         */
         if ($userId != 0) {
-            $query->where('user_id', $userId);
+
+            $query->where(
+                'sales.user_id',
+                $userId
+            );
         }
 
-        if ($selectTipoEstado != 0) { // Si no es igual a 0, aplica el filtro
-            $query->where('sales.status', $selectTipoEstado);
+
+        /*
+         * Estado específico.
+         */
+        if ($selectTipoEstado != 0) {
+
+            $query->where(
+                'sales.status',
+                $selectTipoEstado
+            );
         }
 
-        $data = $query->get();
-        //$data = $query->paginate($PerPage);
+
+        /*
+         * Ejecutar consulta.
+         */
+        $data =
+            $query
+                ->orderBy(
+                    'sales.created_at',
+                    'asc'
+                )
+                ->get();
 
 
-        $user = $userId == 0 ? 'Todos' : User::find($userId)->name;
+        /*
+        |--------------------------------------------------------------------------
+        | VENDEDORES
+        |--------------------------------------------------------------------------
+        */
 
         foreach ($data as $item) {
-            $item->seller_name = getNameSeller($item->seller);  // Usar la función para obtener el nombre del vendedor
+
+            $item->seller_name =
+                getNameSeller(
+                    $item->seller
+                );
         }
-        $empresa = $this->companyVentas();
-        $usuario = $this->currentUser();
-        $currency = $this->currency;
 
-        $pdf = Pdf::loadView('pdf.reporte', compact('data', 'reportType', 'user', 'dateFrom', 'dateTo', 'selectTipoEstado', 'empresa','usuario','currency'));
-        //$pdf = PDF\Pdf::loadView('pdf.reporte', compact('data', 'reportType','user','dateFrom','dateTo'));
 
-        return $pdf->stream("Reporte_{$this->currentDate}.pdf"); //visualizar
-        //return $pdf->download('salesReport.pdf'); //descargar
+        /*
+        |--------------------------------------------------------------------------
+        | PREPARAR VENTAS
+        |--------------------------------------------------------------------------
+        */
+
+        $ventas =
+            $this->prepararVentasReporte(
+                $data
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | RESUMEN GENERAL
+        |--------------------------------------------------------------------------
+        */
+
+        $resumenGeneral =
+            $this->calcularResumenGeneral(
+                $ventas
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATOS GENERALES
+        |--------------------------------------------------------------------------
+        */
+
+        $user =
+            $userId == 0
+                ? 'Todos'
+                : User::find($userId)->name;
+
+
+        $empresa =
+            $this->companyVentas();
+
+
+        $usuario =
+            $this->currentUser();
+
+
+        $currency =
+            $this->currency;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PDF
+        |--------------------------------------------------------------------------
+        */
+
+        $pdf =
+            Pdf::loadView(
+                'pdf.reporte',
+                compact(
+                    'data',
+                    'ventas',
+                    'resumenGeneral',
+                    'reportType',
+                    'user',
+                    'dateFrom',
+                    'dateTo',
+                    'selectTipoEstado',
+                    'empresa',
+                    'usuario',
+                    'currency'
+                )
+            );
+
+
+        return $pdf->stream(
+            "Reporte_{$this->currentDate}.pdf"
+        );
     }
 
     // REPORTE DE CIERRE DE CAJA GENERAL
-    public function reportBoxGeneral($userid, $fromDate = null, $toDate = null, $currency = null)
-    {
+    // REPORTE DE CIERRE DE CAJA GENERAL
+    public function reportBoxGeneral(
+        $userid,
+        $fromDate = null,
+        $toDate = null,
+        $currency = null
+    ) {
 
-        $from = Carbon::parse($fromDate)->startOfDay();
-        $to = Carbon::parse($toDate)->endOfDay();
+        /*
+        |--------------------------------------------------------------------------
+        | RANGO DE FECHAS
+        |--------------------------------------------------------------------------
+        */
 
-        $data = Sale::whereBetween('created_at', [$from, $to])
-            ->where('status','Paid')
-            ->where('user_id', $userid)
-            ->get();
+        $from =
+            Carbon::parse(
+                $fromDate
+            )->startOfDay();
 
 
-        $user = $userid == 0 ? 'Todos' : User::find($userid)->name;
+        $to =
+            Carbon::parse(
+                $toDate
+            )->endOfDay();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CONSULTA
+        |--------------------------------------------------------------------------
+        |
+        | Se cargan details.product porque necesitamos
+        | reconstruir los datos financieros de cada venta.
+        |
+        */
+
+        $query =
+            Sale::with([
+                'details.product'
+            ])
+                ->join(
+                    'users as u',
+                    'u.id',
+                    '=',
+                    'sales.user_id'
+                )
+                ->select(
+                    'sales.*',
+                    'u.name as user'
+                )
+                ->whereBetween(
+                    'sales.created_at',
+                    [
+                        $from,
+                        $to
+                    ]
+                )
+                ->where(
+                    'sales.status',
+                    'PAID'
+                );
+
+
+        /*
+         * 0 significa todos los usuarios.
+         */
+        if ((int) $userid !== 0) {
+
+            $query->where(
+                'sales.user_id',
+                $userid
+            );
+        }
+
+
+        /*
+         * Ejecutar consulta.
+         */
+        $data =
+            $query
+                ->orderBy(
+                    'sales.created_at',
+                    'asc'
+                )
+                ->get();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | VENDEDOR
+        |--------------------------------------------------------------------------
+        */
 
         foreach ($data as $item) {
-            $item->seller_name = getNameSeller($item->seller);  // Usar la función para obtener el nombre del vendedor
+
+            $item->seller_name =
+                getNameSeller(
+                    $item->seller
+                );
         }
-        $empresa = $this->companyVentas();
-        $usuario = $this->currentUser();
-        $currency = $this->currency;
 
-        $pdf = Pdf::loadView('pdf.reporteboxgeneral', compact('data', 'user', 'fromDate', 'toDate', 'empresa','usuario','currency'));
-        //$pdf = PDF\Pdf::loadView('pdf.reporte', compact('data', 'reportType','user','dateFrom','dateTo'));
 
-        return $pdf->stream("ReporteBox_{$this->currentDate}.pdf"); //visualizar
-        //return $pdf->download('salesReport.pdf'); //descargar
+        /*
+        |--------------------------------------------------------------------------
+        | DATOS REUTILIZABLES
+        |--------------------------------------------------------------------------
+        */
+
+        $ventas =
+            $this->prepararVentasReporte(
+                $data
+            );
+
+
+        $resumenGeneral =
+            $this->calcularResumenGeneral(
+                $ventas
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | USUARIO CONSULTADO
+        |--------------------------------------------------------------------------
+        */
+
+        $user =
+            (int) $userid === 0
+                ? 'Todos'
+                : (
+                User::find($userid)->name
+                ?? 'N/A'
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATOS GENERALES
+        |--------------------------------------------------------------------------
+        */
+
+        $empresa =
+            $this->companyVentas();
+
+
+        $usuario =
+            $this->currentUser();
+
+
+        $currency =
+            $this->currency;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PDF
+        |--------------------------------------------------------------------------
+        */
+
+        $pdf =
+            Pdf::loadView(
+                'pdf.reporteboxgeneral',
+                compact(
+                    'data',
+                    'ventas',
+                    'resumenGeneral',
+                    'user',
+                    'fromDate',
+                    'toDate',
+                    'empresa',
+                    'usuario',
+                    'currency'
+                )
+            );
+
+
+        return $pdf->stream(
+            "ReporteBox_{$this->currentDate}.pdf"
+        );
     }
 
     // IMPRESION DE NUEVA VENTA
@@ -143,49 +452,8 @@ class ExportController extends Controller
             "Venta_{$getNextSaleNumber}_{$this->currentDate}.pdf"
         );
     }
-    /*public function reportVenta($change, $efectivo, $seller, $getNextSaleNumber, $totalTaxes, $discount, $customer_data )
-    {
 
-        $cart = Cart::content(); // Obtén los datos que deseas mostrar en el reporte
-        $statusMessage = getSaleStatusMessage($getNextSaleNumber); //Obtiene del HELPER los estados
-        $sale = Sale::with('details')->find($getNextSaleNumber);
-        $empresa = $this->companyVentas();
-        $usuario = $this->currentUser();
-        $customerData = json_decode(urldecode(request('customer_data')), true);
-        $currency = $this->currency;
-
-        if (!$sale) {
-            // Si la venta no existe aun, asignamos un valor predeterminado para evitar null
-            $sale = (object)[
-                'details' => [], // Definir detalles como un array vacío si no hay detalles
-            ];
-        }
-
-       $metodoPago = $this->obtenerMetodoPago($customerData['method_page'] ?? null);
-
-        // Generar el PDF con la vista y los datos
-        $pdf = $this->generatePdf('pdf.impresionventa', [
-            'cart' => $cart,
-            'getNextSaleNumber' => $getNextSaleNumber,
-            'details' => $sale->details,
-            'seller' => $seller,
-            'usuario' => $usuario,
-            'empresa' => $empresa,
-            'statusMessage' => $statusMessage,
-            'change' => $change,
-            'efectivo' => $efectivo,
-            'discount' => $discount,
-            'totalTaxes' => $totalTaxes,
-            'customer' => $customerData,
-            'metodoPago' => $metodoPago,
-            'currency' => $this->currency,
-        ]);
-
-        // Devolver el PDF como una respuesta de streaming
-        return $pdf->stream("Venta_{$getNextSaleNumber}_{$this->currentDate}.pdf");
-    }*/
-
-    // REPORTE DE NUEVA VENTA - FORMATO TÉRMICO
+    /* REPORTE DE NUEVA VENTA - FORMATO TÉRMICO*/
     public function reportVentaTermica(
         $change,
         $efectivo,
@@ -225,15 +493,21 @@ class ExportController extends Controller
         ) {
 
             $cantidadProductos =
-                $data['cart']->count();
+                $data['lineas']->count();
 
         } elseif (
             isset($data['details']) &&
             $data['details']->isNotEmpty()
         ) {
 
-            $cantidadProductos =
-                $data['details']->count();
+            $cantidadConDescuento =
+                $data['lineas']
+                    ->filter(function ($linea) {
+
+                        return
+                            $linea['descuento'] > 0;
+                    })
+                    ->count();
         }
 
 
@@ -244,17 +518,20 @@ class ExportController extends Controller
 
         $altoProducto = 35;
 
+        $altoDescuento = 18;
+
         $altoTicket =
             $altoBase +
             (
                 $cantidadProductos *
                 $altoProducto
+            ) +
+            (
+                $cantidadConDescuento *
+                $altoDescuento
             );
 
 
-        /*
-         * Papel térmico de 80 mm.
-         */
         $pdf->setPaper([
             0,
             0,
@@ -269,14 +546,174 @@ class ExportController extends Controller
     }
 
     // IMPRESION DE VENTA - DETALLES
-    public function reportDetails($seller, $getNextSaleNumber)
+    public function reportDetails(
+        $seller,
+        $getNextSaleNumber
+    ) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | VENTA
+        |--------------------------------------------------------------------------
+        */
+
+        $sale =
+            Sale::with([
+                'details.product',
+                'seller'
+            ])
+                ->find(
+                    $getNextSaleNumber
+                );
+
+
+        if (!$sale) {
+
+            return response()->json(
+                [
+                    'error' =>
+                        'Venta no encontrada'
+                ],
+                404
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATOS GENERALES
+        |--------------------------------------------------------------------------
+        */
+
+        $statusMessage =
+            getSaleStatusMessage(
+                $getNextSaleNumber
+            );
+
+
+        $empresa =
+            $this->companyVentas();
+
+
+        $usuario =
+            $this->currentUser();
+
+
+        $seller_name =
+            getNameSeller(
+                $sale->seller
+            );
+
+
+        $customer =
+            is_array($sale->customer_data)
+                ? $sale->customer_data
+                : [];
+
+
+        $metodoPago =
+            $this->obtenerMetodoPago(
+                $customer['method_page']
+                ?? null
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATOS FINANCIEROS REUTILIZABLES
+        |--------------------------------------------------------------------------
+        */
+
+        $lineas =
+            $this->prepararDetallesVenta(
+                $sale->details
+            );
+
+
+        $resumen =
+            $this->calcularResumenDesdeLineas(
+                $lineas,
+                $sale->taxes ?? 0,
+                $sale->total ?? null
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PDF
+        |--------------------------------------------------------------------------
+        */
+
+        $pdf =
+            $this->generatePdf(
+                'pdf.reportedetails',
+                [
+
+                    'getNextSaleNumber' =>
+                        $getNextSaleNumber,
+
+                    /*
+                     * Se conserva si alguna sección
+                     * antigua todavía la utiliza.
+                     */
+                    'details' =>
+                        $sale->details,
+
+                    /*
+                     * Datos comunes.
+                     */
+                    'lineas' =>
+                        $lineas,
+
+                    'resumen' =>
+                        $resumen,
+
+                    'seller' =>
+                        $seller,
+
+                    'seller_name' =>
+                        $seller_name,
+
+                    'usuario' =>
+                        $usuario,
+
+                    'sale' =>
+                        $sale,
+
+                    'statusMessage' =>
+                        $statusMessage,
+
+                    'empresa' =>
+                        $empresa,
+
+                    'customer' =>
+                        $customer,
+
+                    'metodoPago' =>
+                        $metodoPago,
+
+                    'currency' =>
+                        $this->currency,
+                ]
+            );
+
+
+        return $pdf->stream(
+            "VentaDetails{$getNextSaleNumber}_{$this->currentDate}.pdf"
+        );
+    }
+    /*public function reportDetails($seller, $getNextSaleNumber)
     {
-        $sale = Sale::with('details', 'seller')->find($getNextSaleNumber);
+        //$sale = Sale::with('details', 'seller')->find($getNextSaleNumber);
+        $sale = Sale::with(['details.product', 'seller'])->find($getNextSaleNumber);
         //dd($sale);
 
         if (!$sale) {
             return response()->json(['error' => 'Venta no encontrada'], 404);
         }
+
+        $resumen = $this->calcularResumenVenta($sale);
+        $lineas = $this->prepararDetallesVenta($sale->details);
 
         $statusMessage = getSaleStatusMessage($getNextSaleNumber);
         $empresa = $this->companyVentas();
@@ -299,14 +736,17 @@ class ExportController extends Controller
             'customer' => $sale->customer_data,
             'metodoPago' => $metodoPago,
             'currency' => $this->currency,
+            'resumen' => $resumen,
+            'lineas' => $lineas,
+
         ]);
 
         // Devolver el PDF como una respuesta de streaming
         return $pdf->stream("VentaDetails{$getNextSaleNumber}_{$this->currentDate}.pdf");
-    }
+    }*/
 
     // REPORTE DE CIERRE DE VENTA - DETALLES
-    public function reportBox($seller, $getNextSaleNumber)
+    /*public function reportBox($seller, $getNextSaleNumber)
     {
 
         $sale = Sale::with('details','seller')->find($getNextSaleNumber);
@@ -339,6 +779,83 @@ class ExportController extends Controller
 
         // Devolver el PDF como una respuesta de streaming
         return $pdf->stream("CloseBox{$getNextSaleNumber}_{$this->currentDate}.pdf");
+    }*/
+
+    public function reportBox(
+        $seller,
+        $getNextSaleNumber
+    ) {
+
+        $sale = Sale::with(['details.product', 'seller'])->find($getNextSaleNumber);
+
+        if (!$sale) {
+
+            return response()->json(
+                [
+                    'error' =>
+                        'Venta no encontrada'
+                ],
+                404
+            );
+        }
+
+
+        $empresa = $this->companyVentas();
+        $usuario = $this->currentUser();
+
+        $seller_name =
+            getNameSeller(
+                $sale->seller
+            );
+
+        $metodoPago =
+            $this->obtenerMetodoPago(
+                $sale['customer_data']['method_page']
+                ?? null
+            );
+
+
+        /*
+         * Datos financieros comunes.
+         */
+        $resumen =
+            $this->calcularResumenVenta(
+                $sale
+            );
+
+
+        /*
+         * Detalles procesados.
+         */
+        $lineas =
+            $this->prepararDetallesVenta(
+                $sale->details
+            );
+
+
+        $pdf = $this->generatePdf(
+            'pdf.reportebox',
+            [
+
+                'getNextSaleNumber' => $getNextSaleNumber,
+                'details' => $sale->details,
+                'lineas' => $lineas,
+                'resumen' => $resumen,
+                'seller' => $seller,
+                'seller_name' => $seller_name,
+                'usuario' => $usuario,
+                'sale' => $sale,
+                'empresa' => $empresa,
+                'customer' => $sale->customer_data,
+                'metodoPago' => $metodoPago,
+                'currency' => $this->currency,
+            ]
+        );
+
+
+        return $pdf->stream(
+            "CloseBox{$getNextSaleNumber}_{$this->currentDate}.pdf"
+        );
     }
 
     // FUNCION DE GENERAR PDF
@@ -407,78 +924,740 @@ class ExportController extends Controller
         $discount,
         $customer_data
     ) {
-        $cart = Cart::content();
-
-        $statusMessage = getSaleStatusMessage(
-            $getNextSaleNumber
-        );
-
-        $sale = Sale::with([
-            'details.product'
-        ])->find($getNextSaleNumber);
-
-        $empresa = $this->companyVentas();
-
-        $usuario = $this->currentUser();
-
-        $customerData = json_decode(
-            urldecode($customer_data),
-            true
-        );
 
         /*
-         * Si por algún motivo customer_data
-         * no contiene JSON válido.
-         */
+        |--------------------------------------------------------------------------
+        | DATOS GENERALES
+        |--------------------------------------------------------------------------
+        */
+
+        $cart =
+            Cart::content();
+
+
+        $sale =
+            Sale::with([
+                'details.product'
+            ])
+                ->find(
+                    $getNextSaleNumber
+                );
+
+
+        $empresa =
+            $this->companyVentas();
+
+
+        $usuario =
+            $this->currentUser();
+
+
+        $statusMessage =
+            getSaleStatusMessage(
+                $getNextSaleNumber
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CUSTOMER DATA RECIBIDO
+        |--------------------------------------------------------------------------
+        */
+
+        $customerData =
+            json_decode(
+                urldecode(
+                    $customer_data
+                ),
+                true
+            );
+
+
         if (!is_array($customerData)) {
+
             $customerData = [];
         }
 
-        /*
-         * Si la venta aún no existe,
-         * dejamos details como Collection
-         * para poder usar isNotEmpty(), sum(), etc.
-         */
-        if (!$sale) {
 
-            $sale = (object) [
-                'details' => collect()
-            ];
+        /*
+        |--------------------------------------------------------------------------
+        | VENTA YA GUARDADA
+        |--------------------------------------------------------------------------
+        */
+
+        if ($sale) {
+
+            /*
+             * En una venta histórica preferimos
+             * los datos almacenados en BD.
+             */
+            if (
+                is_array(
+                    $sale->customer_data
+                )
+            ) {
+
+                $customerData =
+                    $sale->customer_data;
+            }
+
+
+            $lineas =
+                $this->prepararDetallesVenta(
+                    $sale->details
+                );
+
+
+            $resumen =
+                $this->calcularResumenDesdeLineas(
+                    $lineas,
+                    $sale->taxes ?? 0,
+                    $sale->total ?? null
+                );
+
+
+            /*
+             * Valores históricos reales.
+             */
+            $change =
+                $sale->change ?? $change;
+
+            $efectivo =
+                $sale->cash ?? $efectivo;
+
+            $totalTaxes =
+                $resumen['impuestos'];
+
+            $discount =
+                $resumen['descuento'];
+
+
+            $details =
+                $sale->details;
+
+        } else {
+
+            /*
+            |--------------------------------------------------------------------------
+            | REPORTE DESDE CARRITO
+            |--------------------------------------------------------------------------
+            */
+
+            $lineas =
+                $this->prepararDetallesCarrito(
+                    $cart
+                );
+
+
+            $resumen =
+                $this->calcularResumenDesdeLineas(
+                    $lineas,
+                    $totalTaxes,
+                    null
+                );
+
+
+            /*
+             * Todavía no hay SaleDetail.
+             */
+            $details =
+                collect();
+
+
+            /*
+             * Ya no dependemos del discount
+             * recibido por URL.
+             */
+            $discount =
+                $resumen['descuento'];
         }
 
-        $metodoPago = $this->obtenerMetodoPago(
-            $customerData['method_page'] ?? null
-        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | MÉTODO DE PAGO
+        |--------------------------------------------------------------------------
+        */
+
+        $metodoPago =
+            $this->obtenerMetodoPago(
+                $customerData['method_page']
+                ?? null
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | RESPUESTA COMÚN
+        |--------------------------------------------------------------------------
+        */
 
         return [
 
-            'cart' => $cart,
+            /*
+             * Se mantienen por compatibilidad.
+             */
+            'cart' =>
+                $cart,
 
-            'getNextSaleNumber' => $getNextSaleNumber,
+            'details' =>
+                $details,
 
-            'details' => $sale->details,
+            /*
+             * Estos dos son los datos que
+             * deben utilizar los PDF.
+             */
+            'lineas' =>
+                $lineas,
 
-            'seller' => $seller,
+            'resumen' =>
+                $resumen,
 
-            'usuario' => $usuario,
+            /*
+             * Venta, cuando ya existe.
+             */
+            'sale' =>
+                $sale,
 
-            'empresa' => $empresa,
+            'getNextSaleNumber' =>
+                $getNextSaleNumber,
 
-            'statusMessage' => $statusMessage,
+            'seller' =>
+                $seller,
 
-            'change' => $change,
+            'usuario' =>
+                $usuario,
 
-            'efectivo' => $efectivo,
+            'empresa' =>
+                $empresa,
 
-            'discount' => $discount,
+            'statusMessage' =>
+                $statusMessage,
 
-            'totalTaxes' => $totalTaxes,
+            'change' =>
+                (float) $change,
 
-            'customer' => $customerData,
+            'efectivo' =>
+                (float) $efectivo,
 
-            'metodoPago' => $metodoPago,
+            /*
+             * Se conservan para no romper
+             * vistas/rutas antiguas.
+             */
+            'discount' =>
+                $resumen['descuento'],
 
-            'currency' => $this->currency,
+            'totalTaxes' =>
+                $resumen['impuestos'],
+
+            'customer' =>
+                $customerData,
+
+            'metodoPago' =>
+                $metodoPago,
+
+            'currency' =>
+                $this->currency,
+        ];
+    }
+
+    private function calcularResumenVenta($sale)
+    {
+        $lineas =
+            $this->prepararDetallesVenta(
+                $sale->details
+            );
+
+
+        return $this->calcularResumenDesdeLineas(
+            $lineas,
+            $sale->taxes ?? 0,
+            $sale->total ?? null
+        );
+    }
+
+    private function prepararDetallesVenta($details)
+    {
+        return $details->map(function ($detail) {
+
+            $cantidad =
+                (float) $detail->quantity;
+
+            $precio =
+                (float) $detail->price;
+
+
+            /*
+             * Precio original antes del descuento.
+             */
+            $subtotal =
+                $precio *
+                $cantidad;
+
+
+            /*
+             * sale_details.discount contiene
+             * el MONTO histórico descontado.
+             */
+            $descuento =
+                (float) (
+                    $detail->discount
+                    ?? 0
+                );
+
+
+            $porcentajeDescuento =
+                $subtotal > 0
+                    ? (
+                        $descuento /
+                        $subtotal
+                    ) * 100
+                    : 0;
+
+
+            $total =
+                $subtotal -
+                $descuento;
+
+
+            return [
+
+                /*
+                 * Lo conservamos por compatibilidad
+                 * con reportes que todavía lo utilizan.
+                 */
+                'detail' =>
+                    $detail,
+
+                'id' =>
+                    $detail->id,
+
+                'product_id' =>
+                    $detail->product_id,
+
+                'codigo' =>
+                    $detail->product->barcode
+                    ?? '-',
+
+                'nombre' =>
+                    $detail->product->name
+                    ?? 'Producto',
+
+                'cantidad' =>
+                    $cantidad,
+
+                'precio' =>
+                    $precio,
+
+                'subtotal' =>
+                    round(
+                        $subtotal,
+                        2
+                    ),
+
+                'descuento' =>
+                    round(
+                        $descuento,
+                        2
+                    ),
+
+                'porcentaje_descuento' =>
+                    round(
+                        $porcentajeDescuento,
+                        2
+                    ),
+
+                'total' =>
+                    round(
+                        $total,
+                        2
+                    ),
+            ];
+        });
+    }
+    private function prepararDetallesCarrito($cart)
+    {
+        /*
+         * Obtener productos en una sola consulta para
+         * poder utilizar barcode y demás información.
+         */
+        $productIds =
+            $cart
+                ->pluck('id')
+                ->map(function ($id) {
+                    return (int) $id;
+                })
+                ->unique()
+                ->values();
+
+
+        $products =
+            Product::whereIn(
+                'id',
+                $productIds
+            )
+                ->get()
+                ->keyBy('id');
+
+
+        return $cart->map(
+            function ($item) use ($products) {
+
+                $cantidad =
+                    (float) $item->qty;
+
+                $precio =
+                    (float) $item->price;
+
+
+                $subtotal =
+                    $precio *
+                    $cantidad;
+
+
+                /*
+                 * En el carrito el descuento
+                 * está guardado como PORCENTAJE.
+                 */
+                $porcentajeDescuento =
+                    (float) (
+                        $item->options->discount
+                        ?? 0
+                    );
+
+
+                $porcentajeDescuento =
+                    min(
+                        max(
+                            $porcentajeDescuento,
+                            0
+                        ),
+                        100
+                    );
+
+
+                $descuento =
+                    $subtotal *
+                    (
+                        $porcentajeDescuento /
+                        100
+                    );
+
+
+                $total =
+                    $subtotal -
+                    $descuento;
+
+
+                $product =
+                    $products->get(
+                        (int) $item->id
+                    );
+
+
+                return [
+
+                    'detail' =>
+                        null,
+
+                    'id' =>
+                        null,
+
+                    'product_id' =>
+                        (int) $item->id,
+
+                    'codigo' =>
+                        $product->barcode
+                        ?? '-',
+
+                    'nombre' =>
+                        $item->name,
+
+                    'cantidad' =>
+                        $cantidad,
+
+                    'precio' =>
+                        $precio,
+
+                    'subtotal' =>
+                        round(
+                            $subtotal,
+                            2
+                        ),
+
+                    'descuento' =>
+                        round(
+                            $descuento,
+                            2
+                        ),
+
+                    'porcentaje_descuento' =>
+                        round(
+                            $porcentajeDescuento,
+                            2
+                        ),
+
+                    'total' =>
+                        round(
+                            $total,
+                            2
+                        ),
+                ];
+            }
+        );
+    }
+
+    private function calcularResumenDesdeLineas(
+        $lineas,
+        $impuestos = 0,
+        $totalVentaHistorico = null
+    ) {
+
+        /*
+         * Total original antes de descuento.
+         */
+        $valorBruto =
+            (float) $lineas->sum(
+                'subtotal'
+            );
+
+
+        /*
+         * Suma monetaria de descuentos.
+         */
+        $descuento =
+            (float) $lineas->sum(
+                'descuento'
+            );
+
+
+        /*
+         * Total calculado después de descuentos.
+         */
+        $totalCalculado =
+            (float) $lineas->sum(
+                'total'
+            );
+
+
+        /*
+         * Para una venta guardada siempre
+         * preferimos sales.total.
+         *
+         * Para carrito utilizamos el cálculo
+         * de las líneas.
+         */
+        $totalVenta =
+            $totalVentaHistorico !== null
+                ? (float) $totalVentaHistorico
+                : $totalCalculado;
+
+
+        $impuestos =
+            (float) $impuestos;
+
+
+        /*
+         * IVA incluido en el total.
+         */
+        $subtotal =
+            $totalVenta -
+            $impuestos;
+
+
+        $totalCantidad =
+            (float) $lineas->sum(
+                'cantidad'
+            );
+
+
+        return [
+
+            'valorBruto' =>
+                round(
+                    $valorBruto,
+                    2
+                ),
+
+            'descuento' =>
+                round(
+                    $descuento,
+                    2
+                ),
+
+            'subtotal' =>
+                round(
+                    $subtotal,
+                    2
+                ),
+
+            'impuestos' =>
+                round(
+                    $impuestos,
+                    2
+                ),
+
+            'totalVenta' =>
+                round(
+                    $totalVenta,
+                    2
+                ),
+
+            'totalCantidad' =>
+                $totalCantidad,
+        ];
+    }
+
+    private function prepararVentasReporte($ventas)
+    {
+        return $ventas->map(function ($sale) {
+
+            $lineas =
+                $this->prepararDetallesVenta(
+                    $sale->details
+                );
+
+            $resumen =
+                $this->calcularResumenDesdeLineas(
+                    $lineas,
+                    $sale->taxes ?? 0,
+                    $sale->total ?? null
+                );
+
+            return [
+                'sale' => $sale,
+                'lineas' => $lineas,
+                'resumen' => $resumen,
+            ];
+        });
+    }
+
+    private function calcularResumenGeneral(
+        $ventasPreparadas
+    ) {
+
+        /*
+         * Cantidad de ventas encontradas.
+         */
+        $cantidadVentas =
+            $ventasPreparadas->count();
+
+
+        /*
+         * Valor bruto acumulado.
+         */
+        $valorBruto =
+            $ventasPreparadas->sum(
+                function ($item) {
+
+                    return
+                        $item['resumen']['valorBruto'];
+                }
+            );
+
+
+        /*
+         * Descuentos acumulados.
+         */
+        $descuento =
+            $ventasPreparadas->sum(
+                function ($item) {
+
+                    return
+                        $item['resumen']['descuento'];
+                }
+            );
+
+
+        /*
+         * Subtotal sin IVA acumulado.
+         */
+        $subtotal =
+            $ventasPreparadas->sum(
+                function ($item) {
+
+                    return
+                        $item['resumen']['subtotal'];
+                }
+            );
+
+
+        /*
+         * IVA acumulado.
+         */
+        $impuestos =
+            $ventasPreparadas->sum(
+                function ($item) {
+
+                    return
+                        $item['resumen']['impuestos'];
+                }
+            );
+
+
+        /*
+         * Total final de todas las ventas.
+         */
+        $totalVenta =
+            $ventasPreparadas->sum(
+                function ($item) {
+
+                    return
+                        $item['resumen']['totalVenta'];
+                }
+            );
+
+
+        /*
+         * Cantidad total de artículos.
+         */
+        $totalCantidad =
+            $ventasPreparadas->sum(
+                function ($item) {
+
+                    return
+                        $item['resumen']['totalCantidad'];
+                }
+            );
+
+
+        return [
+
+            'cantidadVentas' =>
+                $cantidadVentas,
+
+            'valorBruto' =>
+                round(
+                    $valorBruto,
+                    2
+                ),
+
+            'descuento' =>
+                round(
+                    $descuento,
+                    2
+                ),
+
+            'subtotal' =>
+                round(
+                    $subtotal,
+                    2
+                ),
+
+            'impuestos' =>
+                round(
+                    $impuestos,
+                    2
+                ),
+
+            'totalVenta' =>
+                round(
+                    $totalVenta,
+                    2
+                ),
+
+            'totalCantidad' =>
+                $totalCantidad,
         ];
     }
 

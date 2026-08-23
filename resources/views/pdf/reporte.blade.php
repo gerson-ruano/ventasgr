@@ -8,15 +8,30 @@
     <title>
         Reporte de Ventas
     </title>
+
+
     <style>
-        {!! file_get_contents(public_path('css/pdf.css')) !!}
-        {!! file_get_contents(public_path('css/pdf_general.css')) !!}
+
+        {!! file_get_contents(
+            public_path('css/pdf.css')
+        ) !!}
+
+        {!! file_get_contents(
+            public_path('css/pdf_general.css')
+        ) !!}
+
     </style>
 
 </head>
 
 
 @php
+
+    /*
+    |--------------------------------------------------------------------------
+    | ESTADOS
+    |--------------------------------------------------------------------------
+    */
 
     $statusTranslations = [
 
@@ -31,16 +46,56 @@
     ];
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | RESUMEN GENERAL
+    |--------------------------------------------------------------------------
+    |
+    | Todos estos valores ya vienen calculados
+    | desde ExportController.
+    |
+    */
+
     $totalVentas =
-        $data->count();
+        $resumenGeneral[
+            'cantidadVentas'
+        ] ?? 0;
+
+
+    $valorBruto =
+        $resumenGeneral[
+            'valorBruto'
+        ] ?? 0;
+
+
+    $totalDescuento =
+        $resumenGeneral[
+            'descuento'
+        ] ?? 0;
+
+
+    $subtotal =
+        $resumenGeneral[
+            'subtotal'
+        ] ?? 0;
+
+
+    $totalImpuestos =
+        $resumenGeneral[
+            'impuestos'
+        ] ?? 0;
 
 
     $totalImporte =
-        $data->sum('total');
+        $resumenGeneral[
+            'totalVenta'
+        ] ?? 0;
 
 
     $totalItems =
-        $data->sum('items');
+        $resumenGeneral[
+            'totalCantidad'
+        ] ?? 0;
 
 @endphp
 
@@ -60,7 +115,9 @@
         {{-- LOGO --}}
         <td class="header-logo">
 
-            @if(!empty($empresa->imagen_pdf))
+            @if(!empty(
+                $empresa->imagen_pdf
+            ))
 
                 <img
                     src="{{ $empresa->imagen_pdf }}"
@@ -93,14 +150,17 @@
 
             <div class="company-name">
 
-                {{ strtoupper($empresa->name) }}
+                {{ strtoupper(
+                    $empresa->name
+                ) }}
 
             </div>
 
 
             <div class="report-subtitle">
 
-                Sistema de control y administración de ventas
+                Sistema de control y
+                administración de ventas
 
             </div>
 
@@ -118,28 +178,36 @@
 
                 <br>
 
+
                 NIT:
+
                 <strong>
                     {{ $empresa->nit ?? 'N/A' }}
                 </strong>
 
                 <br>
 
+
                 Dirección:
+
                 <strong>
                     {{ $empresa->address ?? 'N/A' }}
                 </strong>
 
                 <br>
 
+
                 Email:
+
                 <strong>
                     {{ $empresa->email ?? 'N/A' }}
                 </strong>
 
                 <br>
 
+
                 Teléfono:
+
                 <strong>
                     {{ $empresa->phone ?? 'N/A' }}
                 </strong>
@@ -159,7 +227,6 @@
 {{-- ================================================================ --}}
 
 <table class="report-info">
-
 
     <tr>
 
@@ -227,7 +294,10 @@
 
             @else
 
-                {{ \Carbon\Carbon::now()->format('d-m-Y') }}
+                {{ \Carbon\Carbon::now()
+                    ->format(
+                        'd-m-Y'
+                    ) }}
 
             @endif
 
@@ -243,12 +313,14 @@
 
         <td class="value">
 
-            {{ \Carbon\Carbon::now()->format('d-m-Y H:i:s') }}
+            {{ \Carbon\Carbon::now()
+                ->format(
+                    'd-m-Y H:i:s'
+                ) }}
 
         </td>
 
     </tr>
-
 
 </table>
 
@@ -264,35 +336,52 @@
 
     <tr>
 
-        <th width="5%">
+        <th width="4%">
             #
         </th>
 
-        <th width="8%">
+
+        <th width="6%">
             Venta
         </th>
 
-        <th width="13%">
-            Importe
+
+        <th width="10%">
+            Bruto
         </th>
+
+
+        <th width="10%">
+            Descuento
+        </th>
+
+
+        <th width="10%">
+            Total
+        </th>
+
+
+        <th width="7%">
+            Cant.
+        </th>
+
 
         <th width="9%">
-            Cantidad
-        </th>
-
-        <th width="11%">
             Estado
         </th>
 
-        <th width="15%">
+
+        <th width="14%">
             Cliente / Vendedor
         </th>
 
-        <th width="17%">
+
+        <th width="13%">
             Usuario
         </th>
 
-        <th width="22%">
+
+        <th width="17%">
             Fecha / Hora
         </th>
 
@@ -301,34 +390,55 @@
     </thead>
 
 
-
     <tbody>
 
 
-    @forelse($data as $index => $item)
-
+    @forelse(
+        $ventas
+        as $index => $venta
+    )
 
         @php
 
+            /*
+             * Sale original.
+             */
+            $item =
+                $venta['sale'];
+
+
+            /*
+             * Resumen de esta venta.
+             */
+            $resumen =
+                $venta['resumen'];
+
+
+            /*
+             * Estado.
+             */
             $statusText =
-                $statusTranslations[$item->status]
+                $statusTranslations[
+                    $item->status
+                ]
                 ?? $item->status;
 
 
-            $statusClass = match($item->status) {
+            $statusClass =
+                match($item->status) {
 
-                'PAID' =>
-                    'status-paid',
+                    'PAID' =>
+                        'status-paid',
 
-                'PENDING' =>
-                    'status-pending',
+                    'PENDING' =>
+                        'status-pending',
 
-                'CANCELLED' =>
-                    'status-cancelled',
+                    'CANCELLED' =>
+                        'status-cancelled',
 
-                default =>
-                    ''
-            };
+                    default =>
+                        ''
+                };
 
         @endphp
 
@@ -336,6 +446,7 @@
         <tr>
 
 
+            {{-- # --}}
             <td class="text-center">
 
                 {{ $index + 1 }}
@@ -343,6 +454,7 @@
             </td>
 
 
+            {{-- VENTA --}}
             <td class="text-center">
 
                 {{ $item->id }}
@@ -350,25 +462,81 @@
             </td>
 
 
+            {{-- VALOR BRUTO --}}
             <td class="text-right">
 
                 {{ $currency }}.
-                {{ number_format($item->total, 2) }}
+                {{ number_format(
+                    $resumen[
+                        'valorBruto'
+                    ],
+                    2
+                ) }}
 
             </td>
 
 
+            {{-- DESCUENTO --}}
+            <td class="text-right">
+
+                @if(
+                    $resumen[
+                        'descuento'
+                    ] > 0
+                )
+
+                    - {{ $currency }}.
+                    {{ number_format(
+                        $resumen[
+                            'descuento'
+                        ],
+                        2
+                    ) }}
+
+                @else
+
+                    {{ $currency }}. 0.00
+
+                @endif
+
+            </td>
+
+
+            {{-- TOTAL --}}
+            <td class="text-right">
+
+                {{ $currency }}.
+                {{ number_format(
+                    $resumen[
+                        'totalVenta'
+                    ],
+                    2
+                ) }}
+
+            </td>
+
+
+            {{-- CANTIDAD --}}
             <td class="text-center">
 
-                {{ $item->items }}
+                {{ number_format(
+                    $resumen[
+                        'totalCantidad'
+                    ],
+                    2
+                ) }}
 
             </td>
 
 
+            {{-- ESTADO --}}
             <td class="text-center">
 
                 <span
-                    class="status {{ $statusClass }}"
+                    class="
+                        status
+                        {{ $statusClass }}
+                    "
                 >
 
                     {{ $statusText }}
@@ -378,24 +546,34 @@
             </td>
 
 
+            {{-- CLIENTE / VENDEDOR --}}
             <td class="text-left">
 
-                {{ $item->seller_name ?? 'Consumidor Final' }}
+                {{ $item->seller_name
+                    ?? 'Consumidor Final'
+                }}
 
             </td>
 
 
+            {{-- USUARIO --}}
             <td class="text-left">
 
-                {{ $item->user ?? 'N/A' }}
+                {{ $item->user
+                    ?? 'N/A'
+                }}
 
             </td>
 
 
+            {{-- FECHA --}}
             <td class="text-center">
 
-                {{ $item->created_at
-                    ->format('d-m-Y H:i') }}
+                {{ \Carbon\Carbon::parse(
+                    $item->created_at
+                )->format(
+                    'd-m-Y H:i'
+                ) }}
 
             </td>
 
@@ -409,12 +587,13 @@
         <tr>
 
             <td
-                colspan="8"
+                colspan="10"
                 class="text-center"
                 style="padding: 20px;"
             >
 
-                No existen ventas para el período consultado.
+                No existen ventas para
+                el período consultado.
 
             </td>
 
@@ -463,8 +642,12 @@
                 Fecha de consulta:
 
                 <strong>
+
                     {{ \Carbon\Carbon::now()
-                        ->format('d-m-Y H:i:s') }}
+                        ->format(
+                            'd-m-Y H:i:s'
+                        ) }}
+
                 </strong>
 
                 <br>
@@ -473,7 +656,11 @@
                 Registros encontrados:
 
                 <strong>
-                    {{ number_format($totalVentas) }}
+
+                    {{ number_format(
+                        $totalVentas
+                    ) }}
+
                 </strong>
 
             </div>
@@ -505,46 +692,134 @@
                 <tbody>
 
 
+                {{-- VENTAS --}}
                 <tr>
 
                     <td>
-
                         Total de ventas
-
                     </td>
 
                     <td class="text-right">
 
-                        {{ number_format($totalVentas) }}
+                        {{ number_format(
+                            $totalVentas
+                        ) }}
 
                     </td>
 
                 </tr>
 
 
+                {{-- PRODUCTOS --}}
                 <tr>
 
                     <td>
-
                         Productos vendidos
-
                     </td>
 
                     <td class="text-right">
 
-                        {{ number_format($totalItems) }}
+                        {{ number_format(
+                            $totalItems,
+                            2
+                        ) }}
 
                     </td>
 
                 </tr>
 
 
+                {{-- VALOR BRUTO --}}
+                <tr>
+
+                    <td>
+                        Valor bruto
+                    </td>
+
+                    <td class="text-right">
+
+                        {{ $currency }}.
+                        {{ number_format(
+                            $valorBruto,
+                            2
+                        ) }}
+
+                    </td>
+
+                </tr>
+
+
+                {{-- DESCUENTOS --}}
+                @if(
+                    $totalDescuento > 0
+                )
+
+                    <tr>
+
+                        <td>
+                            Descuentos (-)
+                        </td>
+
+                        <td class="text-right">
+
+                            - {{ $currency }}.
+                            {{ number_format(
+                                $totalDescuento,
+                                2
+                            ) }}
+
+                        </td>
+
+                    </tr>
+
+                @endif
+
+
+                {{-- SUBTOTAL --}}
+                <tr>
+
+                    <td>
+                        Subtotal sin IVA
+                    </td>
+
+                    <td class="text-right">
+
+                        {{ $currency }}.
+                        {{ number_format(
+                            $subtotal,
+                            2
+                        ) }}
+
+                    </td>
+
+                </tr>
+
+
+                {{-- IVA --}}
+                <tr>
+
+                    <td>
+                        IVA
+                    </td>
+
+                    <td class="text-right">
+
+                        {{ $currency }}.
+                        {{ number_format(
+                            $totalImpuestos,
+                            2
+                        ) }}
+
+                    </td>
+
+                </tr>
+
+
+                {{-- TOTAL --}}
                 <tr class="grand-total">
 
                     <td>
-
                         Importe total
-
                     </td>
 
                     <td class="text-right">

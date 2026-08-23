@@ -126,18 +126,22 @@
                     <span>{{$currency}} {{number_format($totalTaxes, 2) }}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span>Descuento ({{ setting('pos_discount_rate', 0.00) }}%):</span>
-                    <span>{{$currency}} {{ number_format($discount, 2) }}</span>
-
-
+                     <span>
+                        Descuentos:
+                    </span>
+                    <span class="text-red-500 font-semibold">
+                        -{{ $currency }}.{{ number_format($discount, 2) }}
+                    </span>
                 </div>
                 <div class="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>{{$currency}} {{ number_format($totalPrice - $discount - $totalTaxes, 2) }}</span>
+                    <span>
+                        {{ $currency }} {{ number_format($totalPrice + $discount,2) }}
+                    </span>
                 </div>
                 <div class="flex justify-between font-bold">
                     <span>Total:</span>
-                    <span>{{$currency}} {{ number_format($totalPrice, 2) }}</span>
+                    <span>{{ $currency }} {{ number_format($totalPrice,2) }}</span>
                 </div>
             </div>
         </div>
@@ -206,7 +210,7 @@
             <i class="fas fa-receipt"></i>
 
             <span>
-                Ticket
+                Prueba Ticket
             </span>
 
         </span>

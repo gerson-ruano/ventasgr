@@ -298,7 +298,7 @@ class Pos extends Component
         return $empresa;
     }
 
-    public function calculateGlobalTax()
+    /*public function calculateGlobalTax()
     {
         $totalQuantity = 0;
         $totalSale = 0;
@@ -316,6 +316,155 @@ class Pos extends Component
             'totalTaxes' => round($totalTaxes, 2), //number_format($totalTaxes, 2
             'generalTaxRate' => $generalTaxRate * 100, // Guardar el porcentaje para mostrar
             'totalQuantity' => $totalQuantity, // Cantidad total de productos
+        ];
+    }*/
+
+    public function calculateGlobalTax()
+    {
+        $totalQuantity = 0;
+        $totalSale = 0;
+
+        foreach (Cart::content() as $item) {
+
+            /*
+             * Precio y cantidad
+             */
+            $price =
+                (float) $item->price;
+
+            $quantity =
+                (float) $item->qty;
+
+
+            /*
+             * Total bruto de la línea
+             *
+             * Ejemplo:
+             * Q100 x 2 = Q200
+             */
+            $subtotal =
+                $price *
+                $quantity;
+
+
+            /*
+             * Porcentaje de descuento
+             * configurado en el producto.
+             */
+            $discountPercent =
+                (float) (
+                    $item->options->discount
+                    ?? 0
+                );
+
+
+            /*
+             * Protección 0 - 100
+             */
+            $discountPercent =
+                min(
+                    max(
+                        $discountPercent,
+                        0
+                    ),
+                    100
+                );
+
+
+            /*
+             * Monto de descuento.
+             *
+             * Q200 x 10% = Q20
+             */
+            $discountAmount =
+                $subtotal *
+                (
+                    $discountPercent /
+                    100
+                );
+
+
+            /*
+             * Importe después del descuento.
+             *
+             * Q200 - Q20 = Q180
+             */
+            $subtotalWithDiscount =
+                $subtotal -
+                $discountAmount;
+
+
+            /*
+             * Cantidad total de productos.
+             */
+            $totalQuantity +=
+                $quantity;
+
+
+            /*
+             * Base para calcular IVA.
+             */
+            $totalSale +=
+                $subtotalWithDiscount;
+        }
+
+
+        /*
+         * Porcentaje de IVA.
+         *
+         * Si tu configuración almacena:
+         *
+         * 12 = 12%
+         *
+         * esta es la forma correcta.
+         */
+        $generalTaxRatePercent =
+            (float) setting(
+                'pos_tax_rate',
+                12
+            );
+
+
+        /*
+         * Convertir 12% → 0.12
+         */
+        $generalTaxRate =
+            $generalTaxRatePercent /
+            100;
+
+
+        /*
+         * Calcular IVA sobre el total
+         * después de descuentos.
+         */
+        $totalTaxes =
+            $totalSale *
+            $generalTaxRate;
+
+
+        return [
+
+            'totalTaxes' =>
+                round(
+                    $totalTaxes,
+                    2
+                ),
+
+            'generalTaxRate' =>
+                $generalTaxRatePercent,
+
+            'totalQuantity' =>
+                $totalQuantity,
+
+            /*
+             * Lo agregamos porque puede
+             * servir después en reportes.
+             */
+            'taxableAmount' =>
+                round(
+                    $totalSale,
+                    2
+                ),
         ];
     }
 
@@ -366,7 +515,10 @@ class Pos extends Component
             return;
         }
 
-        Cart::add($product->id, $product->name, $cant, $product->price, ['image' => $product->image]);
+        $discount = (float) ($product->discount ?? 0);
+        $discount = min(max($discount, 0), 100);
+
+        Cart::add($product->id, $product->name, $cant, $product->price, ['image' => $product->image, 'discount' => $discount,]);
         $this->updateCartSummary();
         $this->updateTotalPrice();
         $this->getNextSaleNumber();
@@ -401,7 +553,7 @@ class Pos extends Component
         return $this->totalPrice;
     }
 
-    public function updateTotalPrice()
+    /*public function updateTotalPrice()
     {
         $this->totalPrice = 0; // Reset the total price before calculation
 
@@ -414,6 +566,123 @@ class Pos extends Component
         $this->discount = round($this->totalPrice * $discountRate, 2);
         //dd($this->discount);
         $this->totalPrice -= $this->discount;
+    }*/
+
+    public function updateTotalPrice()
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | REINICIAR TOTALES
+        |--------------------------------------------------------------------------
+        */
+
+        $this->totalPrice = 0;
+
+        /*
+         * Ahora $discount representará el MONTO TOTAL
+         * descontado en toda la venta.
+         */
+        $this->discount = 0;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | RECORRER PRODUCTOS DEL CARRITO
+        |--------------------------------------------------------------------------
+        */
+
+        foreach (Cart::content() as $item) {
+
+            /*
+             * Precio x cantidad
+             *
+             * Ejemplo:
+             * Q100 x 2 = Q200
+             */
+            $subtotal =
+                (float) $item->price *
+                (float) $item->qty;
+
+
+            /*
+             * Porcentaje configurado en el producto
+             * y copiado al carrito.
+             *
+             * Ejemplo:
+             * 10 = 10%
+             */
+            $discountPercent =
+                (float) (
+                    $item->options->discount
+                    ?? 0
+                );
+
+
+            /*
+             * Protección para evitar valores
+             * menores a 0 o mayores a 100.
+             */
+            $discountPercent =
+                min(
+                    max(
+                        $discountPercent,
+                        0
+                    ),
+                    100
+                );
+
+
+            /*
+             * Convertir el porcentaje
+             * a monto monetario.
+             *
+             * Q200 x 10% = Q20
+             */
+            $discountAmount =
+                $subtotal *
+                (
+                    $discountPercent /
+                    100
+                );
+
+
+            /*
+             * Acumular todos los descuentos.
+             */
+            $this->discount +=
+                $discountAmount;
+
+
+            /*
+             * Acumular total después
+             * del descuento.
+             *
+             * Q200 - Q20 = Q180
+             */
+            $this->totalPrice +=
+                $subtotal -
+                $discountAmount;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | REDONDEAR
+        |--------------------------------------------------------------------------
+        */
+
+        $this->discount =
+            round(
+                $this->discount,
+                2
+            );
+
+
+        $this->totalPrice =
+            round(
+                $this->totalPrice,
+                2
+            );
     }
 
     protected function getCartItem($productId)
@@ -441,10 +710,14 @@ class Pos extends Component
                 $this->dispatch('showNotification', 'Stock insuficiente para realizar la operación', 'warning');
                 return;
             }
+
+            $discount = (float) ($product->discount ?? 0);
+            $discount = min(max($discount, 0), 100);
+
             Cart::update($cartItem->rowId, $newQty);
             $this->dispatch('showNotification', 'Cantidad de productos ' . $cartItem->name . ' actualizada', 'info');
         } else {
-            Cart::add($product->id, $product->name, $cant, $product->price, ['image' => $product->image]);
+            Cart::add($product->id, $product->name, $cant, $product->price, ['image' => $product->image, 'discount' => $discount,]);
             $this->dispatch('showNotification', 'Producto ' . $cartItem->name . ' agregado Exitosamente', 'success');
         }
         $this->updateCartSummary();
@@ -629,7 +902,7 @@ class Pos extends Component
             ]);
 
             foreach ($items as $item) {
-                SaleDetail::create([
+                /*SaleDetail::create([
                     'price' => $item->price,
                     'quantity' => $item->qty,
                     'product_id' => $item->id,
@@ -639,6 +912,74 @@ class Pos extends Component
 
                 // Actualizar stock
                 $product = Product::find($item->id);
+                $product->decrement('stock', $item->qty);*/
+
+                $subtotal = (float) $item->price * (float) $item->qty;
+
+                /*
+                |--------------------------------------------------------------------------
+                | PORCENTAJE DE DESCUENTO
+                |--------------------------------------------------------------------------
+                |
+                | Viene del producto y fue copiado
+                | al carrito al momento de agregarlo.
+                |
+                */
+
+                $discountPercent = (float) ($item->options->discount ?? 0);
+
+                /*
+                 * Protección entre 0 y 100.
+                 */
+
+                $discountPercent = min(max($discountPercent, 0), 100);
+
+                /*
+                |--------------------------------------------------------------------------
+                | MONTO MONETARIO DEL DESCUENTO
+                |--------------------------------------------------------------------------
+                |
+                | Ejemplo:
+                |
+                | Q200 × 10% = Q20
+                |
+                */
+
+                $discountAmount = round($subtotal * ($discountPercent / 100), 2);
+
+                /*
+                |--------------------------------------------------------------------------
+                | GUARDAR DETALLE DE VENTA
+                |--------------------------------------------------------------------------
+                */
+
+                SaleDetail::create([
+
+                    'price' => $item->price,
+                    'quantity' => $item->qty,
+                    'product_id' => $item->id,
+                    'sale_id' => $sale->id,
+
+                    /*
+                     * Aquí guardamos MONTO,
+                     * no porcentaje.
+                     */
+                    'discount' => $discountAmount,]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | ACTUALIZAR STOCK
+                |--------------------------------------------------------------------------
+                */
+
+                $product = Product::find($item->id);
+
+                if (!$product) {
+                    throw new \Exception(
+                        "Producto no encontrado: {$item->name}"
+                    );
+                }
+
                 $product->decrement('stock', $item->qty);
 
             }
@@ -705,6 +1046,8 @@ class Pos extends Component
         }
         //dd($sale);
 
+        $totalDiscount = round($sale->details->sum('discount'), 2);
+
         // Generar la URL del reporte
         $url = route('report.venta.termica', [
             'change' => $sale->change,
@@ -712,7 +1055,8 @@ class Pos extends Component
             'seller' => getNameSeller($sale->seller),
             'nextSaleNumber' => $sale->id,
             'totalTaxes' => $sale->taxes,
-            optional($sale->details->first())->discount ?? 0,
+            'discount' => $totalDiscount,
+            //optional($sale->details->first())->discount ?? 0,
             'customer_data' => urlencode(json_encode($sale->customer_data))
         ]);
 

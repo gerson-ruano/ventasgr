@@ -6,11 +6,14 @@
     <meta charset="UTF-8">
 
     <title>
-        Detalle de Venta #{{ $getNextSaleNumber }}
+        Detalle Venta #{{ $getNextSaleNumber }}
     </title>
 
+
     <style>
-        {!! file_get_contents(public_path('css/pdf.css')) !!}
+        {!! file_get_contents(
+            public_path('css/pdf.css')
+        ) !!}
     </style>
 
 </head>
@@ -25,65 +28,75 @@
     */
 
     $statusTranslations = [
-        'PAID' => 'PAGADO',
-        'CANCELLED' => 'ANULADO',
-        'PENDING' => 'PENDIENTE',
+
+        'PAID' =>
+            'PAGADO',
+
+        'PENDING' =>
+            'PENDIENTE',
+
+        'CANCELLED' =>
+            'ANULADO',
     ];
 
 
     $statusText =
-        $statusTranslations[$sale->status]
+        $statusTranslations[
+            $sale->status
+        ]
         ?? $sale->status;
 
 
-    $statusClass = match($sale->status) {
+    $statusClass =
+        match($sale->status) {
 
-        'PAID' =>
-            'status-paid',
+            'PAID' =>
+                'status-paid',
 
-        'PENDING' =>
-            'status-pending',
+            'PENDING' =>
+                'status-pending',
 
-        'CANCELLED' =>
-            'status-cancelled',
+            'CANCELLED' =>
+                'status-cancelled',
 
-        default =>
-            ''
-    };
+            default =>
+                ''
+        };
 
 
     /*
     |--------------------------------------------------------------------------
-    | TOTALES
+    | RESUMEN
     |--------------------------------------------------------------------------
+    |
+    | Ningún cálculo financiero se realiza
+    | en esta vista.
+    |
     */
 
-    $totalCantidad =
-        $details->sum('quantity');
-
-
-    $valorBruto =
-        $details->sum(function ($detail) {
-
-            return
-                $detail->price *
-                $detail->quantity;
-        });
-
+    $valorBruto = $resumen['valorBruto'];
 
     $descuento =
-        (float) (
-            $sale->details->first()->discount
-            ?? 0
-        );
+        $resumen['descuento'];
 
+    $subtotal =
+        $resumen['subtotal'];
 
     $impuestos =
-        (float) (
-            $sale->taxes
-            ?? 0
-        );
+        $resumen['impuestos'];
 
+    $totalVenta =
+        $resumen['totalVenta'];
+
+    $totalCantidad =
+        $resumen['totalCantidad'];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAGO
+    |--------------------------------------------------------------------------
+    */
 
     $efectivo =
         (float) (
@@ -97,24 +110,6 @@
             $sale->change
             ?? 0
         );
-
-
-    /*
-     * Total cobrado.
-     */
-    $totalVenta =
-        $efectivo -
-        $cambio;
-
-
-    /*
-     * Conserva la misma lógica
-     * que ya tenías en tu reporte.
-     */
-    $subtotal =
-        $totalVenta
-        - $descuento
-        - $impuestos;
 
 @endphp
 
@@ -138,13 +133,14 @@
 
                 <img
                     src="{{ $empresa->imagen }}"
-                    alt="{{ $empresa->name }}"
+                    alt="{{ $empresa->name ?? 'Empresa' }}"
                     class="invoice-logo"
                 >
 
             @endif
 
         </td>
+
 
 
         {{-- DOCUMENTO --}}
@@ -159,21 +155,23 @@
 
             <div class="document-number">
 
-                VENTA # {{ $getNextSaleNumber }}
+                VENTA #
+                {{ $getNextSaleNumber }}
 
             </div>
 
 
             <div class="company-name">
 
-                {{ strtoupper($empresa->name) }}
+                {{ strtoupper(
+                    $empresa->name
+                    ?? 'EMPRESA'
+                ) }}
 
             </div>
 
 
-            <span
-                class="status {{ $statusClass }}"
-            >
+            <span class="status {{ $statusClass }}">
 
                 {{ $statusText }}
 
@@ -182,19 +180,21 @@
         </td>
 
 
-        {{-- DATOS EMPRESA --}}
+
+        {{-- EMPRESA --}}
         <td class="header-company">
 
             <div class="company-data">
 
                 <strong>
-                    {{ $empresa->name }}
+                    {{ $empresa->name ?? '' }}
                 </strong>
 
                 <br>
 
 
                 NIT:
+
                 <strong>
                     {{ $empresa->nit ?? 'N/A' }}
                 </strong>
@@ -203,6 +203,7 @@
 
 
                 Dirección:
+
                 <strong>
                     {{ $empresa->address ?? 'N/A' }}
                 </strong>
@@ -211,6 +212,7 @@
 
 
                 Email:
+
                 <strong>
                     {{ $empresa->email ?? 'N/A' }}
                 </strong>
@@ -219,6 +221,7 @@
 
 
                 Teléfono:
+
                 <strong>
                     {{ $empresa->phone ?? 'N/A' }}
                 </strong>
@@ -235,7 +238,7 @@
 
 
 {{-- ================================================================ --}}
-{{-- CLIENTE / DOCUMENTO --}}
+{{-- CLIENTE / DATOS DE LA VENTA --}}
 {{-- ================================================================ --}}
 
 <table class="general-info">
@@ -251,7 +254,6 @@
 
                 @if($seller_name == 'Cliente')
 
-
                     <tr>
 
                         <td class="label">
@@ -261,7 +263,11 @@
                         <td>
 
                             <strong>
-                                {{ $customer['name'] ?? 'Consumidor Final' }}
+
+                                {{ $customer['name']
+                                    ?? 'Consumidor Final'
+                                }}
+
                             </strong>
 
                         </td>
@@ -277,7 +283,9 @@
 
                         <td>
 
-                            {{ $customer['nit'] ?? 'CF' }}
+                            {{ $customer['nit']
+                                ?? 'CF'
+                            }}
 
                         </td>
 
@@ -292,45 +300,68 @@
 
                         <td>
 
-                            {{ $customer['address'] ?? 'N/A' }}
+                            {{ $customer['address']
+                                ?? 'N/A'
+                            }}
 
                         </td>
 
                     </tr>
 
 
-                    <tr>
+                    @if(!empty(
+                        $customer[
+                            'departamento_nombre'
+                        ]
+                        ?? null
+                    ))
 
-                        <td class="label">
-                            Departamento:
-                        </td>
+                        <tr>
 
-                        <td>
+                            <td class="label">
+                                Departamento:
+                            </td>
 
-                            {{ $customer['departamento_nombre'] ?? 'N/A' }}
+                            <td>
 
-                        </td>
+                                {{ $customer[
+                                    'departamento_nombre'
+                                ] }}
 
-                    </tr>
+                            </td>
+
+                        </tr>
+
+                    @endif
 
 
-                    <tr>
+                    @if(!empty(
+                        $customer[
+                            'municipio_nombre'
+                        ]
+                        ?? null
+                    ))
 
-                        <td class="label">
-                            Municipio:
-                        </td>
+                        <tr>
 
-                        <td>
+                            <td class="label">
+                                Municipio:
+                            </td>
 
-                            {{ $customer['municipio_nombre'] ?? 'N/A' }}
+                            <td>
 
-                        </td>
+                                {{ $customer[
+                                    'municipio_nombre'
+                                ] }}
 
-                    </tr>
+                            </td>
+
+                        </tr>
+
+                    @endif
 
 
                 @else
-
 
                     <tr>
 
@@ -356,13 +387,10 @@
                         </td>
 
                         <td>
-
                             Consumidor Final
-
                         </td>
 
                     </tr>
-
 
                 @endif
 
@@ -373,7 +401,7 @@
 
 
 
-        {{-- INFORMACIÓN DOCUMENTO --}}
+        {{-- DOCUMENTO --}}
         <td class="document-column">
 
             <table class="info-table">
@@ -382,9 +410,7 @@
                 <tr>
 
                     <td class="label">
-
                         Fecha:
-
                     </td>
 
                     <td>
@@ -401,9 +427,7 @@
                 <tr>
 
                     <td class="label">
-
                         Hora:
-
                     </td>
 
                     <td>
@@ -420,34 +444,42 @@
                 <tr>
 
                     <td class="label">
-
-                        Método:
-
+                        Estado:
                     </td>
 
                     <td>
-
-                        {{ $metodoPago ?? 'N/A' }}
-
+                        {{ $statusText }}
                     </td>
 
                 </tr>
 
 
-                @if(!empty($customer['ref_page'] ?? null))
+                <tr>
+
+                    <td class="label">
+                        Método:
+                    </td>
+
+                    <td>
+                        {{ $metodoPago ?? 'N/A' }}
+                    </td>
+
+                </tr>
+
+
+                @if(!empty(
+                    $customer['ref_page']
+                    ?? null
+                ))
 
                     <tr>
 
                         <td class="label">
-
                             Referencia:
-
                         </td>
 
                         <td>
-
                             {{ $customer['ref_page'] }}
-
                         </td>
 
                     </tr>
@@ -467,36 +499,46 @@
 
 
 {{-- ================================================================ --}}
-{{-- DETALLE DE PRODUCTOS --}}
+{{-- PRODUCTOS --}}
 {{-- ================================================================ --}}
 
-<table class="products-table">
+<table class="table-factus">
 
     <thead>
 
     <tr>
 
-        <th width="6%">
+        <th width="5%">
             #
         </th>
 
-        <th width="13%">
+
+        <th width="11%">
             Código
         </th>
 
-        <th width="35%">
+
+        <th width="28%">
             Descripción
         </th>
 
-        <th width="13%">
-            Cantidad
+
+        <th width="10%">
+            Cant.
         </th>
 
-        <th width="16%">
+
+        <th width="14%">
             Val. Unit.
         </th>
 
-        <th width="17%">
+
+        <th width="16%">
+            Descuento
+        </th>
+
+
+        <th width="16%">
             Total
         </th>
 
@@ -508,11 +550,12 @@
     <tbody>
 
 
-    @forelse($details as $d)
+    @forelse($lineas as $linea)
 
         <tr>
 
 
+            {{-- # --}}
             <td class="text-center">
 
                 {{ $loop->iteration }}
@@ -520,47 +563,92 @@
             </td>
 
 
+
+            {{-- CÓDIGO --}}
             <td class="text-center">
 
-                {{ $d->product->barcode ?? '-' }}
+                {{ $linea['codigo'] }}
 
             </td>
 
 
+
+            {{-- PRODUCTO --}}
             <td>
 
-                {{ $d->product->name }}
+                {{ $linea['nombre'] }}
 
             </td>
 
 
+
+            {{-- CANTIDAD --}}
             <td class="text-center">
 
                 {{ number_format(
-                    $d->quantity,
+                    $linea['cantidad'],
                     2
                 ) }}
 
             </td>
 
 
+
+            {{-- PRECIO UNITARIO --}}
             <td class="money">
 
                 {{ $currency }}.
                 {{ number_format(
-                    $d->price,
+                    $linea['precio'],
                     2
                 ) }}
 
             </td>
 
 
+
+            {{-- DESCUENTO --}}
+            <td class="money">
+
+                @if(
+                    $linea['descuento'] > 0
+                )
+
+                    - {{ $currency }}.
+                    {{ number_format(
+                        $linea['descuento'],
+                        2
+                    ) }}
+
+                    <br>
+
+                    <small>
+
+                        {{ number_format(
+                            $linea[
+                                'porcentaje_descuento'
+                            ],
+                            2
+                        ) }}%
+
+                    </small>
+
+                @else
+
+                    {{ $currency }}. 0.00
+
+                @endif
+
+            </td>
+
+
+
+            {{-- TOTAL --}}
             <td class="money">
 
                 {{ $currency }}.
                 {{ number_format(
-                    $d->price *
-                    $d->quantity,
+                    $linea['total'],
                     2
                 ) }}
 
@@ -572,11 +660,10 @@
 
     @empty
 
-
         <tr>
 
             <td
-                colspan="6"
+                colspan="7"
                 class="text-center"
                 style="padding: 20px;"
             >
@@ -588,7 +675,6 @@
 
         </tr>
 
-
     @endforelse
 
 
@@ -599,16 +685,17 @@
 
 
 {{-- ================================================================ --}}
-{{-- OBSERVACIONES + TOTALES --}}
+{{-- OBSERVACIONES + RESUMEN --}}
 {{-- ================================================================ --}}
 
 <table class="summary-table">
 
     <tr>
 
+
         <th class="observations-title">
 
-            Observaciones
+            Información de la venta
 
         </th>
 
@@ -619,70 +706,74 @@
 
         </th>
 
+
     </tr>
 
 
     <tr>
 
 
-        {{-- OBSERVACIONES --}}
+        {{-- INFORMACIÓN --}}
         <td class="observations-cell">
 
 
-            Estado de la venta:
+            Estado:
 
             <strong>
-
                 {{ $statusText }}
-
             </strong>
 
 
             <br><br>
 
 
-            Venta registrada por:
+            Registrada por:
 
             <strong>
-
-                {{ $usuario->name }}
-
+                {{ $usuario->name ?? 'N/A' }}
             </strong>
 
 
-            @if($seller_name != 'Cliente')
+            @if(
+                $seller_name != 'Cliente'
+            )
 
                 <br><br>
+
 
                 Vendedor:
 
                 <strong>
-
                     {{ $seller_name }}
-
                 </strong>
 
             @endif
 
 
-            @if(!empty($customer['ref_page'] ?? null))
+            @if(!empty(
+                $customer['ref_page']
+                ?? null
+            ))
 
                 <br><br>
+
 
                 Referencia de pago:
 
                 <strong>
-
                     {{ $customer['ref_page'] }}
-
                 </strong>
 
             @endif
 
 
-            @if($sale->created_at != $sale->updated_at)
+            @if(
+                $sale->created_at !=
+                $sale->updated_at
+            )
 
                 <br><br>
+
 
                 Última modificación:
 
@@ -690,7 +781,9 @@
 
                     {{ \Carbon\Carbon::parse(
                         $sale->updated_at
-                    )->format('d-m-Y H:i') }}
+                    )->format(
+                        'd-m-Y H:i'
+                    ) }}
 
                 </strong>
 
@@ -704,16 +797,14 @@
         {{-- TOTALES --}}
         <td class="totals-cell">
 
-
             <table class="totals-inner">
 
 
+                {{-- VALOR BRUTO --}}
                 <tr>
 
                     <td>
-
                         Valor bruto
-
                     </td>
 
                     <td class="money">
@@ -729,12 +820,37 @@
                 </tr>
 
 
+
+                {{-- DESCUENTO --}}
+                @if($descuento > 0)
+
+                    <tr>
+
+                        <td>
+                            Descuento (-)
+                        </td>
+
+                        <td class="money">
+
+                            - {{ $currency }}.
+                            {{ number_format(
+                                $descuento,
+                                2
+                            ) }}
+
+                        </td>
+
+                    </tr>
+
+                @endif
+
+
+
+                {{-- SUBTOTAL --}}
                 <tr>
 
                     <td>
-
-                        Subtotal
-
+                        Subtotal sin IVA
                     </td>
 
                     <td class="money">
@@ -750,12 +866,12 @@
                 </tr>
 
 
+
+                {{-- IVA --}}
                 <tr>
 
                     <td>
-
                         IVA
-
                     </td>
 
                     <td class="money">
@@ -771,33 +887,12 @@
                 </tr>
 
 
+
+                {{-- CANTIDAD --}}
                 <tr>
 
                     <td>
-
-                        Descuento (-)
-
-                    </td>
-
-                    <td class="money">
-
-                        {{ $currency }}.
-                        {{ number_format(
-                            $descuento,
-                            2
-                        ) }}
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-
                         Cantidad
-
                     </td>
 
                     <td class="money">
@@ -812,12 +907,12 @@
                 </tr>
 
 
+
+                {{-- TOTAL --}}
                 <tr class="grand-total">
 
                     <td>
-
                         Total venta
-
                     </td>
 
                     <td class="money">
@@ -835,7 +930,6 @@
 
             </table>
 
-
         </td>
 
 
@@ -846,7 +940,7 @@
 
 
 {{-- ================================================================ --}}
-{{-- OPERACIÓN / DETALLES DE PAGO --}}
+{{-- PAGO --}}
 {{-- ================================================================ --}}
 
 <table class="payment-section">
@@ -857,50 +951,34 @@
         {{-- OPERACIÓN --}}
         <td class="operation-column">
 
-
             <div class="section-title">
 
-                Tipo de operación
+                Información de Operación
 
             </div>
 
 
             <div class="section-label">
-
                 Operación:
-
             </div>
 
-
             <div class="section-value">
-
                 Venta
-
             </div>
-
 
 
             <div class="section-label">
-
                 Estado:
-
             </div>
-
 
             <div class="section-value">
-
                 {{ $statusText }}
-
             </div>
-
 
 
             <div class="section-label">
-
                 Productos vendidos:
-
             </div>
-
 
             <div class="section-value">
 
@@ -911,14 +989,12 @@
 
             </div>
 
-
         </td>
 
 
 
         {{-- PAGO --}}
         <td class="payment-column">
-
 
             <div class="section-title">
 
@@ -928,26 +1004,21 @@
 
 
             <div class="section-label">
-
                 Forma de pago:
-
             </div>
-
 
             <div class="section-value">
 
-                {{ $metodoPago ?? 'N/A' }}
+                {{ $metodoPago
+                    ?? 'N/A'
+                }}
 
             </div>
-
 
 
             <div class="section-label">
-
                 Efectivo recibido:
-
             </div>
-
 
             <div class="section-value">
 
@@ -960,13 +1031,9 @@
             </div>
 
 
-
             <div class="section-label">
-
                 Cambio:
-
             </div>
-
 
             <div class="section-value">
 
@@ -979,13 +1046,9 @@
             </div>
 
 
-
             <div class="section-label">
-
                 Monto:
-
             </div>
-
 
             <div class="payment-total">
 
@@ -996,7 +1059,6 @@
                 ) }}
 
             </div>
-
 
         </td>
 
@@ -1015,69 +1077,67 @@
 
     <tr>
 
+
         <td class="label">
-
             Usuario:
-
         </td>
-
 
         <td>
-
-            {{ $usuario->name }}
-
+            {{ $usuario->name ?? 'N/A' }}
         </td>
 
 
         <td class="label">
-
-            Fecha de ingreso:
-
+            Fecha de venta:
         </td>
-
 
         <td>
 
             {{ \Carbon\Carbon::parse(
                 $sale->created_at
-            )->format('d-m-Y H:i') }}
+            )->format(
+                'd-m-Y H:i'
+            ) }}
 
         </td>
+
 
     </tr>
 
 
     <tr>
 
+
         <td class="label">
-
-            Consulta:
-
+            Fecha de consulta:
         </td>
-
 
         <td>
 
             {{ \Carbon\Carbon::now()
-                ->format('d-m-Y H:i:s') }}
+                ->format(
+                    'd-m-Y H:i:s'
+                ) }}
 
         </td>
 
 
         <td class="label">
-
             Modificado:
-
         </td>
-
 
         <td>
 
-            @if($sale->created_at != $sale->updated_at)
+            @if(
+                $sale->created_at !=
+                $sale->updated_at
+            )
 
                 {{ \Carbon\Carbon::parse(
                     $sale->updated_at
-                )->format('d-m-Y H:i') }}
+                )->format(
+                    'd-m-Y H:i'
+                ) }}
 
             @else
 
@@ -1086,6 +1146,7 @@
             @endif
 
         </td>
+
 
     </tr>
 
@@ -1107,7 +1168,7 @@
             <td width="33%">
 
                 Sistema
-                {{ $empresa->name }}
+                {{ $empresa->name ?? '' }}
 
             </td>
 
@@ -1128,7 +1189,6 @@
             >
 
                 Página
-
                 <span class="pagenum"></span>
 
             </td>
@@ -1139,6 +1199,7 @@
     </table>
 
 </section>
+
 
 
 <script type="text/php">

@@ -14,12 +14,29 @@
                     <th>Nombre</th>
                     <th>Precio</th>
                     <th>Cantidad</th>
+                    <th>Descuento</th>
                     <th>Subtotal</th>
                     <th>Acciones</th>
                 </tr>
                 </thead>
                 <tbody>
                 @foreach($cart as $item)
+                    @php
+                        // Precio × cantidad
+                        $subtotal = (float) $item->price * (float) $item->qty;
+
+                        // Porcentaje de descuento guardado en el carrito
+                        $discountPercent = (float) ($item->options->discount ?? 0);
+
+                        // Evitar porcentajes inválidos
+                        $discountPercent = min(max($discountPercent, 0), 100);
+
+                        // Monto que se descuenta
+                        $discountAmount = $subtotal * ($discountPercent / 100);
+
+                        // Total del producto después del descuento
+                        $totalLinea = $subtotal - $discountAmount;
+                    @endphp
                     <tr>
                         <td>{{ $loop->iteration }}</td>
                         <td>
@@ -34,7 +51,54 @@
                                    wire:change="updateQty({{ $item->id }}, $event.target.value)"
                                    class="w-16 text-center bg-blue-100 border border-blue-500 rounded-lg text-sm"/>
                         </td>
-                        <td>{{$currency}}. {{ number_format($item->price * $item->qty, 2) }}</td>
+                        {{-- DESCUENTO --}}
+                        <td class="">
+
+                            @if($discountPercent > 0)
+
+                                <span class="text-red-500 font-semibold">
+                    {{ number_format($discountPercent, 2) }}%
+                </span>
+
+                                <br>
+
+                                <span class="text-xs text-red-400">
+                    -{{ $currency }}.
+                    {{ number_format($discountAmount, 2) }}
+                </span>
+
+                            @else
+
+                                <span class="text-gray-400">
+                    Sin descuento
+                </span>
+
+                            @endif
+
+                        </td>
+
+                        {{-- TOTAL DESPUÉS DEL DESCUENTO --}}
+                        <td>
+
+                            @if($discountAmount > 0)
+
+                                <span class="text-xs text-gray-400 line-through">
+                    {{ $currency }}.
+                    {{ number_format($subtotal, 2) }}
+                </span>
+
+                                <br>
+
+                            @endif
+
+                            <strong>
+                                {{ $currency }}.
+                                {{ number_format($totalLinea, 2) }}
+                            </strong>
+
+                        </td>
+
+                        {{--}}<td>{{$currency}}. {{ number_format($item->price * $item->qty, 2) }}</td>--}}
                         <td>
                             <div class="flex space-x-2 justify-center">
                                 <button wire:click.prevent="increaseQty({{ $item->id }})"
