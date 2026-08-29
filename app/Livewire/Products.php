@@ -146,6 +146,7 @@ class Products extends Component
                 'barcode' => $this->barcode,
                 'stock' => $stock->$this->stock ?? 0,
                 'alerts' => $this->alerts,
+                'discount' => $this->discount ?? 0,
                 'category_id' => $this->categoryid,
 
             ]);
@@ -202,9 +203,9 @@ class Products extends Component
                 'cost' => $this->cost,
                 'price' => $this->price,
                 'barcode' => $this->barcode,
-                'stock' => $this->stock,
+                'stock' => $this->stock ?? 0,
                 'alerts' => $this->alerts,
-                $this->discount = $product->discount ?? 0,
+                'discount' => $this->discount ?? 0,
                 'category_id' => $this->categoryid,
 
             ]);
