@@ -23,6 +23,10 @@ services:
 
         networks:
             - laravel
+        
+        environment:
+            - TZ=America/Guatemala
+            - APP_TIMEZONE=America/Guatemala
 
 
     nginx:
