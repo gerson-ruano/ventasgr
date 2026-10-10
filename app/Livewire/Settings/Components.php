@@ -40,7 +40,8 @@ class Components extends Component
         }
         // actualizar snapshot
         $this->originalSettings = $this->settings;
-        $this->dispatch('showNotification', 'Configuración guardada', 'success');
+        return $this->redirectRoute('home', navigate: true
+    );
     }
 
 

@@ -53,7 +53,11 @@
         </div>
 
         <div class="flex justify-end mt-6 space-x-2">
-            <button class="btn btn-outline ml-2" wire:click="resetToOriginal">Cancelar</button>
+            <!--button class="btn btn-outline ml-2" wire:click="resetToOriginal">Cancelar</button-->
+            <a href="{{ route('home') }}"
+                wire:navigate class="btn btn-outline ml-2">
+                Cancelar
+            </a>
             <button class="btn btn-info" wire:click="save">Guardar Cambios</button>
         </div>
     </div>
